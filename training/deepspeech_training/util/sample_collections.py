@@ -83,11 +83,7 @@ def unpack_maybe(sample):
     """
     Loads the supplied sample from disk (or the network) if the audio isn't loaded in to memory already.
     """
-    if hasattr(sample, 'unpack'):
-        realized_sample = sample.unpack()
-    else:
-        realized_sample = sample
-    return realized_sample
+    return sample.unpack() if hasattr(sample, 'unpack') else sample
 
 
 def load_sample(filename, label=None):
@@ -111,7 +107,7 @@ def load_sample(filename, label=None):
     ext = os.path.splitext(filename)[1].lower()
     audio_type = get_loadable_audio_type_from_extension(ext)
     if audio_type is None:
-        raise ValueError('Unknown audio type extension "{}"'.format(ext))
+        raise ValueError(f'Unknown audio type extension "{ext}"')
     return PackedSample(filename, audio_type, label)
 
 
@@ -145,7 +141,7 @@ class DirectSDBWriter:
         self.id_prefix = sdb_filename if id_prefix is None else id_prefix
         self.labeled = labeled
         if audio_type not in SERIALIZABLE_AUDIO_TYPES:
-            raise ValueError('Audio type "{}" not supported'.format(audio_type))
+            raise ValueError(f'Audio type "{audio_type}" not supported')
         self.audio_type = audio_type
         self.bitrate = bitrate
         self.sdb_file = open_remote(sdb_filename, 'wb', buffering=buffering)
@@ -262,18 +258,17 @@ class SDB:  # pylint: disable=too-many-instance-attributes
 
         self.transcript_index = None
         if labeled is not False:
-            transcript_columns = self.find_columns(content=CONTENT_TYPE_TRANSCRIPT, mime_type=MIME_TYPE_TEXT)
-            if transcript_columns:
+            if transcript_columns := self.find_columns(
+                content=CONTENT_TYPE_TRANSCRIPT, mime_type=MIME_TYPE_TEXT
+            ):
                 self.transcript_index = transcript_columns[0]
-            else:
-                if labeled is True:
-                    raise RuntimeError('No transcript data (missing in schema)')
+            elif labeled is True:
+                raise RuntimeError('No transcript data (missing in schema)')
 
         sample_chunk_len = self.read_big_int()
         self.sdb_file.seek(sample_chunk_len + BIGINT_SIZE, 1)
         num_samples = self.read_big_int()
-        for _ in range(num_samples):
-            self.offsets.append(self.read_big_int())
+        self.offsets.extend(self.read_big_int() for _ in range(num_samples))
         if reverse:
             self.offsets.reverse()
 
@@ -289,14 +284,16 @@ class SDB:  # pylint: disable=too-many-instance-attributes
             criteria.append((CONTENT_KEY, content))
         if mime_type is not None:
             criteria.append((MIME_TYPE_KEY, mime_type))
-        if len(criteria) == 0:
+        if not criteria:
             raise ValueError('At least one of "content" or "mime-type" has to be provided')
         matches = []
         for index, column in enumerate(self.schema):
-            matched = 0
-            for field, value in criteria:
-                if column[field] == value or (isinstance(value, list) and column[field] in value):
-                    matched += 1
+            matched = sum(
+                1
+                for field, value in criteria
+                if column[field] == value
+                or (isinstance(value, list) and column[field] in value)
+            )
             if matched == len(criteria):
                 matches.append(index)
         return matches
@@ -306,8 +303,9 @@ class SDB:  # pylint: disable=too-many-instance-attributes
         column_data = [None] * len(columns)
         found = 0
         if not 0 <= row_index < len(self.offsets):
-            raise ValueError('Wrong sample index: {} - has to be between 0 and {}'
-                             .format(row_index, len(self.offsets) - 1))
+            raise ValueError(
+                f'Wrong sample index: {row_index} - has to be between 0 and {len(self.offsets) - 1}'
+            )
         self.sdb_file.seek(self.offsets[row_index] + INT_SIZE)
         for index in range(len(self.schema)):
             chunk_len = self.read_int()
@@ -321,7 +319,7 @@ class SDB:  # pylint: disable=too-many-instance-attributes
         return tuple(column_data)
 
     def __getitem__(self, i):
-        sample_id = '{}:{}'.format(self.id_prefix, i)
+        sample_id = f'{self.id_prefix}:{i}'
         if self.transcript_index is None:
             [audio_data] = self.read_row(i, self.speech_index)
             return Sample(self.audio_type, audio_data, sample_id=sample_id)
@@ -369,7 +367,7 @@ class CSVWriter:  # pylint: disable=too-many-instance-attributes
         self.set_name = self.csv_filename.stem
         self.csv_dir = self.csv_base_dir / self.set_name
         if self.csv_dir.exists():
-            raise RuntimeError('"{}" already existing'.format(self.csv_dir))
+            raise RuntimeError(f'"{self.csv_dir}" already existing')
         os.mkdir(str(self.csv_dir))
         self.absolute_paths = absolute_paths
         fieldnames = ['wav_filename', 'wav_filesize']
@@ -581,7 +579,7 @@ def samples_from_source(sample_source, buffering=BUFFER_SIZE, labeled=None, reve
         return SDB(sample_source, buffering=buffering, labeled=labeled, reverse=reverse)
     if ext == '.csv':
         return CSV(sample_source, labeled=labeled, reverse=reverse)
-    raise ValueError('Unknown file type: "{}"'.format(ext))
+    raise ValueError(f'Unknown file type: "{ext}"')
 
 
 def samples_from_sources(sample_sources, buffering=BUFFER_SIZE, labeled=None, reverse=False):
@@ -615,7 +613,7 @@ def samples_from_sources(sample_sources, buffering=BUFFER_SIZE, labeled=None, re
     or LabeledSample / util.audio.Sample directly, if multiple collections are provided
     """
     sample_sources = list(sample_sources)
-    if len(sample_sources) == 0:
+    if not sample_sources:
         raise ValueError('No files')
     if len(sample_sources) == 1:
         return samples_from_source(sample_sources[0], buffering=buffering, labeled=labeled, reverse=reverse)

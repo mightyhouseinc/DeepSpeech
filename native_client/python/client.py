@@ -20,13 +20,16 @@ except ImportError:
 
 
 def convert_samplerate(audio_path, desired_sample_rate):
-    sox_cmd = 'sox {} --type raw --bits 16 --channels 1 --rate {} --encoding signed-integer --endian little --compression 0.0 --no-dither - '.format(quote(audio_path), desired_sample_rate)
+    sox_cmd = f'sox {quote(audio_path)} --type raw --bits 16 --channels 1 --rate {desired_sample_rate} --encoding signed-integer --endian little --compression 0.0 --no-dither - '
     try:
         output = subprocess.check_output(shlex.split(sox_cmd), stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as e:
-        raise RuntimeError('SoX returned non-zero status: {}'.format(e.stderr))
+        raise RuntimeError(f'SoX returned non-zero status: {e.stderr}')
     except OSError as e:
-        raise OSError(e.errno, 'SoX not found, use {}hz files or install it: {}'.format(desired_sample_rate, e.strerror))
+        raise OSError(
+            e.errno,
+            f'SoX not found, use {desired_sample_rate}hz files or install it: {e.strerror}',
+        )
 
     return desired_sample_rate, np.frombuffer(output, np.int16)
 
@@ -52,9 +55,7 @@ def words_from_candidate_transcript(metadata):
         if token.text == " " or i == len(metadata.tokens) - 1:
             word_duration = token.start_time - word_start_time
 
-            if word_duration < 0:
-                word_duration = 0
-
+            word_duration = max(word_duration, 0)
             each_word = dict()
             each_word["word"] = word
             each_word["start_time"] = round(word_start_time, 4)
@@ -113,7 +114,7 @@ def main():
                         help='Hot-words and their boosts.')
     args = parser.parse_args()
 
-    print('Loading model from file {}'.format(args.model), file=sys.stderr)
+    print(f'Loading model from file {args.model}', file=sys.stderr)
     model_load_start = timer()
     # sphinx-doc: python_ref_model_start
     ds = Model(args.model)
@@ -127,7 +128,7 @@ def main():
     desired_sample_rate = ds.sampleRate()
 
     if args.scorer:
-        print('Loading scorer from files {}'.format(args.scorer), file=sys.stderr)
+        print(f'Loading scorer from files {args.scorer}', file=sys.stderr)
         scorer_load_start = timer()
         ds.enableExternalScorer(args.scorer)
         scorer_load_end = timer() - scorer_load_start
@@ -145,7 +146,10 @@ def main():
     fin = wave.open(args.audio, 'rb')
     fs_orig = fin.getframerate()
     if fs_orig != desired_sample_rate:
-        print('Warning: original sample rate ({}) is different than {}hz. Resampling might produce erratic speech recognition.'.format(fs_orig, desired_sample_rate), file=sys.stderr)
+        print(
+            f'Warning: original sample rate ({fs_orig}) is different than {desired_sample_rate}hz. Resampling might produce erratic speech recognition.',
+            file=sys.stderr,
+        )
         fs_new, audio = convert_samplerate(args.audio, desired_sample_rate)
     else:
         audio = np.frombuffer(fin.readframes(fin.getnframes()), np.int16)

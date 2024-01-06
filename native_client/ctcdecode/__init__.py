@@ -76,7 +76,7 @@ class Alphabet(swigwrapper.Alphabet):
         '''
         # Convert SWIG's UnsignedIntVec to a Python list
         res = super(Alphabet, self).Encode(input.encode('utf-8'))
-        return [el for el in res]
+        return list(res)
 
     def DecodeSingle(self, input):
         res = super(Alphabet, self).DecodeSingle(input)
@@ -126,7 +126,7 @@ class UTF8Alphabet(swigwrapper.UTF8Alphabet):
         '''
         # Convert SWIG's UnsignedIntVec to a Python list
         res = super(UTF8Alphabet, self).Encode(input.encode('utf-8'))
-        return [el for el in res]
+        return list(res)
 
     def DecodeSingle(self, input):
         res = super(UTF8Alphabet, self).DecodeSingle(input)

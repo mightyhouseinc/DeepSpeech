@@ -22,7 +22,7 @@ class ConfigSingleton:
         if not ConfigSingleton._config:
             raise RuntimeError("Global configuration not yet initialized.")
         if not hasattr(ConfigSingleton._config, name):
-            raise RuntimeError("Configuration option {} not found in config.".format(name))
+            raise RuntimeError(f"Configuration option {name} not found in config.")
         return ConfigSingleton._config[name]
 
 
@@ -93,7 +93,7 @@ def initialize_globals():
         # Pin GPU to be used to process local rank (one GPU per process)
         c.session_config.gpu_options.visible_device_list = str(hvd.local_rank())
         c.num_devices = hvd.size()
-        c.is_master_process = True if hvd.rank() == 0 else False
+        c.is_master_process = hvd.rank() == 0
     else:
     # # Available GPU devices
         c.available_devices = get_available_gpus(c.session_config)
@@ -144,20 +144,18 @@ def initialize_globals():
 
     # Size of audio window in samples
     if (FLAGS.feature_win_len * FLAGS.audio_sample_rate) % 1000 != 0:
-        log_error('--feature_win_len value ({}) in milliseconds ({}) multiplied '
-                  'by --audio_sample_rate value ({}) must be an integer value. Adjust '
-                  'your --feature_win_len value or resample your audio accordingly.'
-                  ''.format(FLAGS.feature_win_len, FLAGS.feature_win_len / 1000, FLAGS.audio_sample_rate))
+        log_error(
+            f'--feature_win_len value ({FLAGS.feature_win_len}) in milliseconds ({FLAGS.feature_win_len / 1000}) multiplied by --audio_sample_rate value ({FLAGS.audio_sample_rate}) must be an integer value. Adjust your --feature_win_len value or resample your audio accordingly.'
+        )
         sys.exit(1)
 
     c.audio_window_samples = FLAGS.audio_sample_rate * (FLAGS.feature_win_len / 1000)
 
     # Stride for feature computations in samples
     if (FLAGS.feature_win_step * FLAGS.audio_sample_rate) % 1000 != 0:
-        log_error('--feature_win_step value ({}) in milliseconds ({}) multiplied '
-                  'by --audio_sample_rate value ({}) must be an integer value. Adjust '
-                  'your --feature_win_step value or resample your audio accordingly.'
-                  ''.format(FLAGS.feature_win_step, FLAGS.feature_win_step / 1000, FLAGS.audio_sample_rate))
+        log_error(
+            f'--feature_win_step value ({FLAGS.feature_win_step}) in milliseconds ({FLAGS.feature_win_step / 1000}) multiplied by --audio_sample_rate value ({FLAGS.audio_sample_rate}) must be an integer value. Adjust your --feature_win_step value or resample your audio accordingly.'
+        )
         sys.exit(1)
 
     c.audio_step_samples = FLAGS.audio_sample_rate * (FLAGS.feature_win_step / 1000)

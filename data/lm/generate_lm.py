@@ -36,18 +36,18 @@ def convert_and_filter_topk(args):
         file_in.close()
 
     # Save top-k words
-    print("\nSaving top {} words ...".format(args.top_k))
+    print(f"\nSaving top {args.top_k} words ...")
     top_counter = counter.most_common(args.top_k)
     vocab_str = "\n".join(word for word, count in top_counter)
-    vocab_path = "vocab-{}.txt".format(args.top_k)
+    vocab_path = f"vocab-{args.top_k}.txt"
     vocab_path = os.path.join(args.output_dir, vocab_path)
     with open(vocab_path, "w+") as file:
         file.write(vocab_str)
 
     print("\nCalculating word statistics ...")
     total_words = sum(counter.values())
-    print("  Your text file has {} words in total".format(total_words))
-    print("  It has {} unique words".format(len(counter)))
+    print(f"  Your text file has {total_words} words in total")
+    print(f"  It has {len(counter)} unique words")
     top_words_sum = sum(count for word, count in top_counter)
     word_fraction = (top_words_sum / total_words) * 100
     print(
@@ -58,16 +58,12 @@ def convert_and_filter_topk(args):
     print('  Your most common word "{}" occurred {} times'.format(*top_counter[0]))
     last_word, last_count = top_counter[-1]
     print(
-        '  The least common word in your top-k is "{}" with {} times'.format(
-            last_word, last_count
-        )
+        f'  The least common word in your top-k is "{last_word}" with {last_count} times'
     )
     for i, (w, c) in enumerate(reversed(top_counter)):
         if c > last_count:
             print(
-                '  The first word with {} occurrences is "{}" at place {}'.format(
-                    c, w, len(top_counter) - 1 - i
-                )
+                f'  The first word with {c} occurrences is "{w}" at place {len(top_counter) - 1 - i}'
             )
             break
 
@@ -103,7 +99,7 @@ def build_lm(args, data_lower, vocab_str):
         [
             os.path.join(args.kenlm_bins, "filter"),
             "single",
-            "model:{}".format(lm_path),
+            f"model:{lm_path}",
             filtered_path,
         ],
         input=vocab_str.encode("utf-8"),

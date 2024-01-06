@@ -34,7 +34,7 @@ def main():
     in_files = args.csv_files.split(",")
 
     print("### Reading in the following transcript files: ###")
-    print("### {} ###".format(in_files))
+    print(f"### {in_files} ###")
 
     all_text = set()
     for in_file in in_files:
@@ -46,7 +46,11 @@ def main():
                     if not args.disable_unicode_variants:
                         unicode_transcript = unicodedata.normalize("NFKC", row[2])
                         if row[2] != unicode_transcript:
-                            print("Your input file", in_file, "contains at least one transript with unicode chars on more than one code-point: '{}'. Consider using NFKC normalization: unicodedata.normalize('NFKC', str).".format(row[2]))
+                            print(
+                                "Your input file",
+                                in_file,
+                                f"contains at least one transript with unicode chars on more than one code-point: '{row[2]}'. Consider using NFKC normalization: unicodedata.normalize('NFKC', str).",
+                            )
                             sys.exit(-1)
                     all_text |= set(row[2])
             except IndexError:

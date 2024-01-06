@@ -194,10 +194,7 @@ class GramVaaniConverter:
                 os.path.splitext(os.path.basename(mp3_filename))[0] + ".wav",
             )
             if not os.path.exists(wav_filename):
-                _logger.debug(
-                    "Converting mp3 file %s to wav file %s"
-                    % (mp3_filename, wav_filename)
-                )
+                _logger.debug(f"Converting mp3 file {mp3_filename} to wav file {wav_filename}")
                 transformer = Transformer()
                 transformer.convert(
                     samplerate=SAMPLE_RATE, n_channels=N_CHANNELS, bitdepth=BITDEPTH
@@ -205,8 +202,7 @@ class GramVaaniConverter:
                 transformer.build(str(mp3_filename), str(wav_filename))
             else:
                 _logger.debug(
-                    "Already converted mp3 file %s to wav file %s"
-                    % (mp3_filename, wav_filename)
+                    f"Already converted mp3 file {mp3_filename} to wav file {wav_filename}"
                 )
         return wav_directory
 
@@ -242,7 +238,7 @@ class GramVaaniDataSets:
         self.valid = self.raw[self._is_valid_raw_rows()]
         self.valid = self.valid.sample(frac=1).reset_index(drop=True)
         train_size, dev_size, test_size = self._calculate_data_set_sizes()
-        self.train = self.valid.loc[0:train_size]
+        self.train = self.valid.loc[:train_size]
         self.dev = self.valid.loc[train_size : train_size + dev_size]
         self.test = self.valid.loc[
             train_size + dev_size : train_size + dev_size + test_size
@@ -269,7 +265,7 @@ class GramVaaniDataSets:
             os.path.join(self.target_dir, wav_relative_filename)
         )
         transcript = validate_label(transcript)
-        if None == transcript:
+        if transcript is None:
             transcript = ""
         return pd.Series([wav_relative_filename, wav_filesize, transcript])
 
@@ -282,8 +278,7 @@ class GramVaaniDataSets:
                 is_valid_raw_transcripts, is_valid_raw_wav_frames
             )
         ]
-        series = pd.Series(is_valid_raw_row)
-        return series
+        return pd.Series(is_valid_raw_row)
 
     def _is_valid_raw_transcripts(self):
         return pd.Series([bool(transcript) for transcript in self.raw.transcript])

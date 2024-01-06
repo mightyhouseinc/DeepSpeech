@@ -23,7 +23,9 @@ def print_import_report(counter, sample_rate, max_secs):
         print('Skipped %d samples that were too short to match the transcript.' % counter['too_short'])
     if counter['too_long'] > 0:
         print('Skipped %d samples that were longer than %d seconds.' % (counter['too_long'], max_secs))
-    print('Final amount of imported audio: %s from %s.' % (secs_to_hours(counter['imported_time'] / sample_rate), secs_to_hours(counter['total_time'] / sample_rate)))
+    print(
+        f"Final amount of imported audio: {secs_to_hours(counter['imported_time'] / sample_rate)} from {secs_to_hours(counter['total_time'] / sample_rate)}."
+    )
 
 def get_importers_parser(description):
     parser = argparse.ArgumentParser(description=description)

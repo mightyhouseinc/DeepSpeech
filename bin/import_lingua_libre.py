@@ -30,7 +30,7 @@ MAX_SECS = 10
 
 ARCHIVE_DIR_NAME = "lingua_libre"
 ARCHIVE_NAME = "Q{qId}-{iso639_3}-{language_English_name}.zip"
-ARCHIVE_URL = "https://lingualibre.fr/datasets/" + ARCHIVE_NAME
+ARCHIVE_URL = f"https://lingualibre.fr/datasets/{ARCHIVE_NAME}"
 
 
 def _download_and_preprocess_data(target_dir):
@@ -48,20 +48,20 @@ def _maybe_extract(target_dir, extracted_data, archive_path):
     # If target_dir/extracted_data does not exist, extract archive in target_dir
     extracted_path = os.path.join(target_dir, extracted_data)
     if not os.path.exists(extracted_path):
-        print('No directory "%s" - extracting archive...' % extracted_path)
+        print(f'No directory "{extracted_path}" - extracting archive...')
         if not os.path.isdir(extracted_path):
             os.mkdir(extracted_path)
         with zipfile.ZipFile(archive_path) as zip_f:
             zip_f.extractall(extracted_path)
     else:
-        print('Found directory "%s" - not extracting it from archive.' % archive_path)
+        print(f'Found directory "{archive_path}" - not extracting it from archive.')
 
 
 def one_sample(sample):
     """ Take a audio file, and optionally convert it to 16kHz WAV """
     ogg_filename = sample[0]
     # Storing wav files next to the ogg ones - just with a different suffix
-    wav_filename = os.path.splitext(ogg_filename)[0] + ".wav"
+    wav_filename = f"{os.path.splitext(ogg_filename)[0]}.wav"
     _maybe_convert_wav(ogg_filename, wav_filename)
     file_size = -1
     frames = 0
@@ -102,7 +102,8 @@ def _maybe_convert_sets(target_dir, extracted_data):
     extracted_dir = os.path.join(target_dir, extracted_data)
     # override existing CSV with normalized one
     target_csv_template = os.path.join(
-        target_dir, ARCHIVE_DIR_NAME + "_" + ARCHIVE_NAME.replace(".zip", "_{}.csv")
+        target_dir,
+        f"{ARCHIVE_DIR_NAME}_" + ARCHIVE_NAME.replace(".zip", "_{}.csv"),
     )
     if os.path.isfile(target_csv_template):
         return

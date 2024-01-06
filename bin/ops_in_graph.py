@@ -11,7 +11,7 @@ def main():
         graph_def = tfv1.GraphDef()
         graph_def.ParseFromString(fin.read())
 
-        print("\n".join(sorted(set(n.op for n in graph_def.node))))
+        print("\n".join(sorted({n.op for n in graph_def.node})))
 
 
 if __name__ == "__main__":

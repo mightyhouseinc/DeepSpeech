@@ -100,9 +100,9 @@ def print_report(samples, losses, wer, cer, dataset_name):
 
     def print_single_sample(sample):
         print('WER: %f, CER: %f, loss: %f' % (sample.wer, sample.cer, sample.loss))
-        print(' - wav: file://%s' % sample.wav_filename)
-        print(' - src: "%s"' % sample.src)
-        print(' - res: "%s"' % sample.res)
+        print(f' - wav: file://{sample.wav_filename}')
+        print(f' - src: "{sample.src}"')
+        print(f' - res: "{sample.res}"')
         print('-' * 80)
 
     print('Best WER:', '\n' + '-' * 80)

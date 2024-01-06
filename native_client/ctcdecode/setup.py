@@ -55,13 +55,9 @@ project_version = read('../../training/deepspeech_training/VERSION').strip()
 
 build_dir = 'temp_build/temp_build'
 
-if sys.platform.startswith('win'):
-    archive_ext = 'lib'
-else:
-    archive_ext = 'a'
-
-third_party_build = 'third_party.{}'.format(archive_ext)
-ctc_decoder_build = 'first_party.{}'.format(archive_ext)
+archive_ext = 'lib' if sys.platform.startswith('win') else 'a'
+third_party_build = f'third_party.{archive_ext}'
+ctc_decoder_build = f'first_party.{archive_ext}'
 
 
 maybe_rebuild(KENLM_FILES, third_party_build, build_dir)
@@ -87,9 +83,9 @@ setup(
     name='ds_ctcdecoder',
     version=project_version,
     description="""DS CTC decoder""",
-    cmdclass = {'build': BuildExtFirst},
+    cmdclass={'build': BuildExtFirst},
     ext_modules=[decoder_module],
-    package_dir = {'ds_ctcdecoder': '.'},
+    package_dir={'ds_ctcdecoder': '.'},
     py_modules=['ds_ctcdecoder', 'ds_ctcdecoder.swigwrapper'],
-    install_requires = ['numpy%s' % numpy_min_ver],
+    install_requires=[f'numpy{numpy_min_ver}'],
 )

@@ -3,6 +3,7 @@
 Downloads and prepares (parts of) the "German Distant Speech" corpus (TUDA) for DeepSpeech.py
 Use "python3 import_tuda.py -h" for help
 """
+
 import argparse
 import csv
 import os
@@ -19,11 +20,9 @@ from deepspeech_training.util.importers import validate_label_eng as validate_la
 from ds_ctcdecoder import Alphabet
 
 TUDA_VERSION = "v2"
-TUDA_PACKAGE = "german-speechdata-package-{}".format(TUDA_VERSION)
-TUDA_URL = "http://ltdata1.informatik.uni-hamburg.de/kaldi_tuda_de/{}.tar.gz".format(
-    TUDA_PACKAGE
-)
-TUDA_ARCHIVE = "{}.tar.gz".format(TUDA_PACKAGE)
+TUDA_PACKAGE = f"german-speechdata-package-{TUDA_VERSION}"
+TUDA_URL = f"http://ltdata1.informatik.uni-hamburg.de/kaldi_tuda_de/{TUDA_PACKAGE}.tar.gz"
+TUDA_ARCHIVE = f"{TUDA_PACKAGE}.tar.gz"
 
 CHANNELS = 1
 SAMPLE_WIDTH = 2
@@ -35,9 +34,9 @@ FIELDNAMES = ["wav_filename", "wav_filesize", "transcript"]
 def maybe_extract(archive):
     extracted = os.path.join(CLI_ARGS.base_dir, TUDA_PACKAGE)
     if os.path.isdir(extracted):
-        print('Found directory "{}" - not extracting.'.format(extracted))
+        print(f'Found directory "{extracted}" - not extracting.')
     else:
-        print('Extracting "{}"...'.format(archive))
+        print(f'Extracting "{archive}"...')
         with tarfile.open(archive) as tar:
             members = tar.getmembers()
             bar = progressbar.ProgressBar(max_value=len(members), widgets=SIMPLE_BAR)
@@ -93,10 +92,7 @@ def write_csvs(extracted):
     for sub_set in ["train", "dev", "test"]:
         set_path = os.path.join(extracted, sub_set)
         set_files = os.listdir(set_path)
-        recordings = {}
-        for file in set_files:
-            if file.endswith(".xml"):
-                recordings[file[:-4]] = []
+        recordings = {file[:-4]: [] for file in set_files if file.endswith(".xml")}
         for file in set_files:
             if file.endswith(".wav") and "_" in file:
                 prefix = file.split("_")[0]
@@ -104,16 +100,16 @@ def write_csvs(extracted):
                     recordings[prefix].append(file)
         recordings = recordings.items()
         csv_path = os.path.join(
-            CLI_ARGS.base_dir, "tuda-{}-{}.csv".format(TUDA_VERSION, sub_set)
+            CLI_ARGS.base_dir, f"tuda-{TUDA_VERSION}-{sub_set}.csv"
         )
-        print('Writing "{}"...'.format(csv_path))
+        print(f'Writing "{csv_path}"...')
         with open(csv_path, "w", encoding="utf-8", newline="") as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=FIELDNAMES)
             writer.writeheader()
             set_dir = os.path.join(extracted, sub_set)
             bar = progressbar.ProgressBar(max_value=len(recordings), widgets=SIMPLE_BAR)
             for prefix, wav_names in bar(recordings):
-                xml_path = os.path.join(set_dir, prefix + ".xml")
+                xml_path = os.path.join(set_dir, f"{prefix}.xml")
                 meta = ET.parse(xml_path).getroot()
                 sentence = list(meta.iter("cleaned_sentence"))[0].text
                 sentence = check_and_prepare_sentence(sentence)
@@ -144,7 +140,7 @@ def write_csvs(extracted):
 
 def cleanup(archive):
     if not CLI_ARGS.keep_archive:
-        print('Removing archive "{}"...'.format(archive))
+        print(f'Removing archive "{archive}"...')
         os.remove(archive)
 
 

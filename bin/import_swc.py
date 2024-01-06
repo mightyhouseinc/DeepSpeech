@@ -130,9 +130,9 @@ def maybe_download_language(language):
 def maybe_extract(data_dir, extracted_data, archive):
     extracted = os.path.join(data_dir, extracted_data)
     if os.path.isdir(extracted):
-        print('Found directory "{}" - not extracting.'.format(extracted))
+        print(f'Found directory "{extracted}" - not extracting.')
     else:
-        print('Extracting "{}"...'.format(archive))
+        print(f'Extracting "{archive}"...')
         with tarfile.open(archive) as tar:
             members = tar.getmembers()
             bar = progressbar.ProgressBar(max_value=len(members), widgets=SIMPLE_BAR)
@@ -144,9 +144,7 @@ def maybe_extract(data_dir, extracted_data, archive):
 def ignored(node):
     if node is None:
         return False
-    if node.tag == "ignored":
-        return True
-    return ignored(node.find(".."))
+    return True if node.tag == "ignored" else ignored(node.find(".."))
 
 
 def read_token(token):
@@ -180,7 +178,7 @@ ALPHABETS = {}
 def get_alphabet(language):
     if language in ALPHABETS:
         return ALPHABETS[language]
-    alphabet_path = getattr(CLI_ARGS, language + "_alphabet")
+    alphabet_path = getattr(CLI_ARGS, f"{language}_alphabet")
     alphabet = Alphabet(alphabet_path) if alphabet_path else None
     ALPHABETS[language] = alphabet
     return alphabet
@@ -351,7 +349,7 @@ def maybe_convert_one_to_wav(entry):
         elif len(files) > 1:
             wav_files = []
             for i, file in enumerate(files):
-                wav_path = os.path.join(root, "audio{}.wav".format(i))
+                wav_path = os.path.join(root, f"audio{i}.wav")
                 transformer.build(file, wav_path)
                 wav_files.append(wav_path)
             combiner.set_input_format(file_type=["wav"] * len(wav_files))
@@ -376,9 +374,9 @@ def assign_sub_sets(samples):
     speakers = group(samples, lambda sample: sample.speaker).values()
     speakers = list(sorted(speakers, key=len))
     sample_sets = [[], []]
-    while any(map(lambda s: len(s) < sample_size, sample_sets)) and len(speakers) > 0:
+    while any(map(lambda s: len(s) < sample_size, sample_sets)) and speakers:
         for sample_set in sample_sets:
-            if len(sample_set) < sample_size and len(speakers) > 0:
+            if len(sample_set) < sample_size and speakers:
                 sample_set.extend(speakers.pop(0))
     train_set = sum(speakers, [])
     if len(train_set) == 0:
@@ -414,7 +412,7 @@ def assign_sub_sets(samples):
 def create_sample_dirs(language):
     print("Creating sample directories...")
     for set_name in ["train", "dev", "test"]:
-        dir_path = os.path.join(CLI_ARGS.base_dir, language + "-" + set_name)
+        dir_path = os.path.join(CLI_ARGS.base_dir, f"{language}-{set_name}")
         if not os.path.isdir(dir_path):
             os.mkdir(dir_path)
 
@@ -432,7 +430,7 @@ def split_audio_files(samples, language):
                 index = sub_sets[sample.sub_set]
                 sample_wav_path = os.path.join(
                     CLI_ARGS.base_dir,
-                    language + "-" + sample.sub_set,
+                    f"{language}-{sample.sub_set}",
                     "sample-{0:06d}.wav".format(index),
                 )
                 sample.wav_path = sample_wav_path
@@ -452,8 +450,8 @@ def write_csvs(samples, language):
     for sub_set, set_samples in group(samples, lambda s: s.sub_set).items():
         set_samples = sorted(set_samples, key=lambda s: s.wav_path)
         base_dir = os.path.abspath(CLI_ARGS.base_dir)
-        csv_path = os.path.join(base_dir, language + "-" + sub_set + ".csv")
-        print('Writing "{}"...'.format(csv_path))
+        csv_path = os.path.join(base_dir, f"{language}-{sub_set}.csv")
+        print(f'Writing "{csv_path}"...')
         with open(csv_path, "w", encoding="utf-8", newline="") as csv_file:
             writer = csv.DictWriter(
                 csv_file, fieldnames=FIELDNAMES_EXT if CLI_ARGS.add_meta else FIELDNAMES
@@ -476,11 +474,11 @@ def write_csvs(samples, language):
 
 def cleanup(archive, language):
     if not CLI_ARGS.keep_archive:
-        print('Removing archive "{}"...'.format(archive))
+        print(f'Removing archive "{archive}"...')
         os.remove(archive)
     language_dir = os.path.join(CLI_ARGS.base_dir, language)
     if not CLI_ARGS.keep_intermediate and os.path.isdir(language_dir):
-        print('Removing intermediate files in "{}"...'.format(language_dir))
+        print(f'Removing intermediate files in "{language_dir}"...')
         shutil.rmtree(language_dir)
 
 
@@ -500,7 +498,7 @@ def handle_args():
     parser = argparse.ArgumentParser(description="Import Spoken Wikipedia Corpora")
     parser.add_argument("base_dir", help="Directory containing all data")
     parser.add_argument(
-        "--language", default="all", help="One of (all|{})".format("|".join(LANGUAGES))
+        "--language", default="all", help=f'One of (all|{"|".join(LANGUAGES)})'
     )
     parser.add_argument(
         "--exclude_numbers",
@@ -527,10 +525,8 @@ def handle_args():
     )
     for language in LANGUAGES:
         parser.add_argument(
-            "--{}_alphabet".format(language),
-            help="Exclude {} samples with characters not in provided alphabet file".format(
-                language
-            ),
+            f"--{language}_alphabet",
+            help=f"Exclude {language} samples with characters not in provided alphabet file",
         )
     parser.add_argument(
         "--add_meta", action="store_true", help="Adds article and speaker CSV columns"

@@ -58,10 +58,10 @@ def init_worker(params):
 def one_sample(sample):
     """ Take an audio file, and optionally convert it to 16kHz WAV """
     mp3_filename = sample[0]
-    if not os.path.splitext(mp3_filename.lower())[1] == ".mp3":
+    if os.path.splitext(mp3_filename.lower())[1] != ".mp3":
         mp3_filename += ".mp3"
     # Storing wav files next to the mp3 ones - just with a different suffix
-    wav_filename = os.path.splitext(mp3_filename)[0] + ".wav"
+    wav_filename = f"{os.path.splitext(mp3_filename)[0]}.wav"
     _maybe_convert_wav(mp3_filename, wav_filename)
     file_size = -1
     frames = 0
@@ -107,7 +107,7 @@ def _maybe_convert_set(dataset, tsv_dir, audio_dir, filter_obj, space_after_ever
 
     if rows is None:
         rows = []
-        input_tsv = os.path.join(os.path.abspath(tsv_dir), dataset + ".tsv")
+        input_tsv = os.path.join(os.path.abspath(tsv_dir), f"{dataset}.tsv")
         if not os.path.isfile(input_tsv):
             return rows
         print("Loading TSV file: ", input_tsv)
@@ -115,9 +115,14 @@ def _maybe_convert_set(dataset, tsv_dir, audio_dir, filter_obj, space_after_ever
         samples = []
         with open(input_tsv, encoding="utf-8") as input_tsv_file:
             reader = csv.DictReader(input_tsv_file, delimiter="\t")
-            for row in reader:
-                samples.append((os.path.join(audio_dir, row["path"]), row["sentence"], row["client_id"]))
-
+            samples.extend(
+                (
+                    os.path.join(audio_dir, row["path"]),
+                    row["sentence"],
+                    row["client_id"],
+                )
+                for row in reader
+            )
         counter = get_counter()
         num_samples = len(samples)
 
@@ -137,7 +142,7 @@ def _maybe_convert_set(dataset, tsv_dir, audio_dir, filter_obj, space_after_ever
         assert len(rows) == imported_samples
         print_import_report(counter, SAMPLE_RATE, MAX_SECS)
 
-    output_csv = os.path.join(os.path.abspath(audio_dir), dataset + ".csv")
+    output_csv = os.path.join(os.path.abspath(audio_dir), f"{dataset}.csv")
     print("Saving new DeepSpeech-formatted CSV file to: ", output_csv)
     with open(output_csv, "w", encoding="utf-8", newline="") as output_csv_file:
         print("Writing CSV file for DeepSpeech.py as: ", output_csv)

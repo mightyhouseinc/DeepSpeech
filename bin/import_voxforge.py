@@ -124,9 +124,7 @@ def _download_and_preprocess_data(data_dir):
         makedirs(archive_dir)
 
     print(
-        "Downloading Voxforge data set into {} if not already present...".format(
-            archive_dir
-        )
+        f"Downloading Voxforge data set into {archive_dir} if not already present..."
     )
 
     voxforge_url = "http://www.repository.voxforge1.org/downloads/SpeechCorpus/Trunk/Audio/Main/16kHz_16bit"
@@ -137,7 +135,7 @@ def _download_and_preprocess_data(data_dir):
     refs = [l["href"] for l in soup.find_all("a") if ".tgz" in l["href"]]
 
     # download files in parallel
-    print("{} files to download".format(len(refs)))
+    print(f"{len(refs)} files to download")
     downloader = _parallel_downloader(
         voxforge_url, archive_dir, len(refs), AtomicCounter()
     )
@@ -159,9 +157,7 @@ def _download_and_preprocess_data(data_dir):
 
     # extract tars in parallel
     print(
-        "Extracting Voxforge data set into {} if not already present...".format(
-            data_dir
-        )
+        f"Extracting Voxforge data set into {data_dir} if not already present..."
     )
     extracter = _parallel_extracter(
         data_dir, number_of_test, number_of_dev, len(tarfiles), AtomicCounter()
@@ -169,7 +165,7 @@ def _download_and_preprocess_data(data_dir):
     p.map(extracter, enumerate(tarfiles))
 
     # Generate data set
-    print("Generating Voxforge data set into {}".format(data_dir))
+    print(f"Generating Voxforge data set into {data_dir}")
     test_files = _generate_dataset(data_dir, "test")
     dev_files = _generate_dataset(data_dir, "dev")
     train_files = _generate_dataset(data_dir, "train")
@@ -193,7 +189,7 @@ def _generate_dataset(data_dir, data_set):
                     transcript = ""
                     for token in sentence.split(" "):
                         word = token.strip()
-                        if word != "" and word != " ":
+                        if word not in ["", " "]:
                             transcript += word + " "
                     transcript = (
                         unicodedata.normalize("NFKD", transcript.strip())
@@ -206,8 +202,8 @@ def _generate_dataset(data_dir, data_set):
                         # remove audios that are shorter than 0.5s and longer than 20s.
                         # remove audios that are too short for transcript.
                         if (
-                            (wav_filesize / 32000) > 0.5
-                            and (wav_filesize / 32000) < 20
+                            wav_filesize > 0.5 * 32000
+                            and wav_filesize < 640000
                             and transcript != ""
                             and wav_filesize / len(transcript) > 1400
                         ):

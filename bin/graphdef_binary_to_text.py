@@ -13,7 +13,7 @@ def main():
         graph_def = tfv1.GraphDef()
         graph_def.ParseFromString(fin.read())
 
-        with tfv1.gfile.FastGFile(sys.argv[1] + "txt", "w") as fout:
+        with tfv1.gfile.FastGFile(f"{sys.argv[1]}txt", "w") as fout:
             fout.write(text_format.MessageToString(graph_def))
 
 

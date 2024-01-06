@@ -22,10 +22,8 @@ FIELDNAMES = ["wav_filename", "wav_filesize", "transcript"]
 SAMPLE_RATE = 16000
 MAX_SECS = 10
 ARCHIVE_DIR_NAME = "cv_corpus_v1"
-ARCHIVE_NAME = ARCHIVE_DIR_NAME + ".tar.gz"
-ARCHIVE_URL = (
-    "https://s3.us-east-2.amazonaws.com/common-voice-data-download/" + ARCHIVE_NAME
-)
+ARCHIVE_NAME = f"{ARCHIVE_DIR_NAME}.tar.gz"
+ARCHIVE_URL = f"https://s3.us-east-2.amazonaws.com/common-voice-data-download/{ARCHIVE_NAME}"
 
 
 def _download_and_preprocess_data(target_dir):
@@ -43,11 +41,11 @@ def _maybe_extract(target_dir, extracted_data, archive_path):
     # If target_dir/extracted_data does not exist, extract archive in target_dir
     extracted_path = os.join(target_dir, extracted_data)
     if not os.path.exists(extracted_path):
-        print('No directory "%s" - extracting archive...' % extracted_path)
+        print(f'No directory "{extracted_path}" - extracting archive...')
         with tarfile.open(archive_path) as tar:
             tar.extractall(target_dir)
     else:
-        print('Found directory "%s" - not extracting it from archive.' % extracted_path)
+        print(f'Found directory "{extracted_path}" - not extracting it from archive.')
 
 
 def _maybe_convert_sets(target_dir, extracted_data):
@@ -63,7 +61,7 @@ def _maybe_convert_sets(target_dir, extracted_data):
 def one_sample(sample):
     mp3_filename = sample[0]
     # Storing wav files next to the mp3 ones - just with a different suffix
-    wav_filename = path.splitext(mp3_filename)[0] + ".wav"
+    wav_filename = f"{path.splitext(mp3_filename)[0]}.wav"
     _maybe_convert_wav(mp3_filename, wav_filename)
     frames = int(
         subprocess.check_output(["soxi", "-s", wav_filename], stderr=subprocess.STDOUT)
@@ -103,15 +101,16 @@ def one_sample(sample):
 def _maybe_convert_set(extracted_dir, source_csv, target_csv):
     print()
     if os.path.exists(target_csv):
-        print('Found CSV file "%s" - not importing "%s".' % (target_csv, source_csv))
+        print(f'Found CSV file "{target_csv}" - not importing "{source_csv}".')
         return
-    print('No CSV file "%s" - importing "%s"...' % (target_csv, source_csv))
+    print(f'No CSV file "{target_csv}" - importing "{source_csv}"...')
     samples = []
     with open(source_csv) as source_csv_file:
         reader = csv.DictReader(source_csv_file)
-        for row in reader:
-            samples.append((os.path.join(extracted_dir, row["filename"]), row["text"]))
-
+        samples.extend(
+            (os.path.join(extracted_dir, row["filename"]), row["text"])
+            for row in reader
+        )
     # Mutable counters for the concurrent embedded routine
     counter = get_counter()
     num_samples = len(samples)
@@ -128,7 +127,7 @@ def _maybe_convert_set(extracted_dir, source_csv, target_csv):
     pool.close()
     pool.join()
 
-    print('Writing "%s"...' % target_csv)
+    print(f'Writing "{target_csv}"...')
     with open(target_csv, "w", encoding="utf-8", newline="") as target_csv_file:
         writer = csv.DictWriter(target_csv_file, fieldnames=FIELDNAMES)
         writer.writeheader()

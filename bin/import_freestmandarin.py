@@ -12,7 +12,7 @@ COLUMN_NAMES = ["wav_filename", "wav_filesize", "transcript"]
 
 
 def extract(archive_path, target_dir):
-    print("Extracting {} into {}...".format(archive_path, target_dir))
+    print(f"Extracting {archive_path} into {target_dir}...")
     with tarfile.open(archive_path) as tar:
         tar.extractall(target_dir)
 
