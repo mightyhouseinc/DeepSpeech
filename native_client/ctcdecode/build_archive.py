@@ -25,16 +25,16 @@ else:
 INCLUDES = [
     '..',
     '../kenlm',
-    OPENFST_DIR + '/src/include',
+    f'{OPENFST_DIR}/src/include',
     'third_party/ThreadPool',
-    'third_party/object_pool'
+    'third_party/object_pool',
 ]
 
 KENLM_FILES = (glob.glob('../kenlm/util/*.cc')
                 + glob.glob('../kenlm/lm/*.cc')
                 + glob.glob('../kenlm/util/double-conversion/*.cc'))
 
-KENLM_FILES += glob.glob(OPENFST_DIR + '/src/lib/*.cc')
+KENLM_FILES += glob.glob(f'{OPENFST_DIR}/src/lib/*.cc')
 
 KENLM_FILES = [
     fn for fn in KENLM_FILES
@@ -62,14 +62,14 @@ def build_archive(srcs=[], out_name='', build_dir='temp_build/temp_build', debug
     args = ARGS + (DBG_ARGS if debug else OPT_ARGS)
 
     for file in srcs:
-        outfile = os.path.join(build_dir, os.path.splitext(file)[0] + '.o')
+        outfile = os.path.join(build_dir, f'{os.path.splitext(file)[0]}.o')
         outdir = os.path.dirname(outfile)
         if not os.path.exists(outdir):
             print('mkdir', outdir)
             os.makedirs(outdir)
 
     def build_one(file):
-        outfile = os.path.join(build_dir, os.path.splitext(file)[0] + '.o')
+        outfile = os.path.join(build_dir, f'{os.path.splitext(file)[0]}.o')
         if os.path.exists(outfile):
             return
 
@@ -77,13 +77,13 @@ def build_archive(srcs=[], out_name='', build_dir='temp_build/temp_build', debug
             file = '"{}"'.format(file.replace('\\', '/'))
             output = '/Fo"{}"'.format(outfile.replace('\\', '/'))
         else:
-            output = '-o ' + outfile
+            output = f'-o {outfile}'
 
         cmd = '{cc} -c {cflags} {args} {includes} {infile} {output}'.format(
             cc=compiler,
             cflags=cflags,
             args=' '.join(args),
-            includes=' '.join('-I' + i for i in INCLUDES),
+            includes=' '.join(f'-I{i}' for i in INCLUDES),
             infile=file,
             output=output,
         )

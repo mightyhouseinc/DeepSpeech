@@ -25,7 +25,7 @@ MAX_SECS = 15
 
 ARCHIVE_DIR_NAME = "African_Accented_French"
 ARCHIVE_NAME = "African_Accented_French.tar.gz"
-ARCHIVE_URL = "http://www.openslr.org/resources/57/" + ARCHIVE_NAME
+ARCHIVE_URL = f"http://www.openslr.org/resources/57/{ARCHIVE_NAME}"
 
 
 def _download_and_preprocess_data(target_dir):
@@ -43,14 +43,14 @@ def _maybe_extract(target_dir, extracted_data, archive_path):
     # If target_dir/extracted_data does not exist, extract archive in target_dir
     extracted_path = os.path.join(target_dir, extracted_data)
     if not os.path.exists(extracted_path):
-        print('No directory "%s" - extracting archive...' % extracted_path)
+        print(f'No directory "{extracted_path}" - extracting archive...')
         if not os.path.isdir(extracted_path):
             os.mkdir(extracted_path)
         tar = tarfile.open(archive_path)
         tar.extractall(target_dir)
         tar.close()
     else:
-        print('Found directory "%s" - not extracting it from archive.' % archive_path)
+        print(f'Found directory "{archive_path}" - not extracting it from archive.')
 
 
 def one_sample(sample):
@@ -114,17 +114,13 @@ def _maybe_convert_sets(target_dir, extracted_data):
     transcripts = {}
     for tr in all_files:
         with open(os.path.join(target_dir, ARCHIVE_DIR_NAME, tr), "r") as tr_source:
-            for line in tr_source.readlines():
+            for line in tr_source:
                 line = line.strip()
 
-                if ".tsv" in tr:
-                    sep = "	"
-                else:
-                    sep = " "
-
+                sep = "	" if ".tsv" in tr else " "
                 audio = os.path.basename(line.split(sep)[0])
 
-                if not (".wav" in audio):
+                if ".wav" not in audio:
                     if ".tdf" in audio:
                         audio = audio.replace(".tdf", ".wav")
                     else:

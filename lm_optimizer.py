@@ -60,9 +60,9 @@ def main(_):
     study = optuna.create_study()
     study.set_user_attr("is_character_based", is_character_based)
     study.optimize(objective, n_jobs=1, n_trials=FLAGS.n_trials)
-    print('Best params: lm_alpha={} and lm_beta={} with WER={}'.format(study.best_params['lm_alpha'],
-                                                                       study.best_params['lm_beta'],
-                                                                       study.best_value))
+    print(
+        f"Best params: lm_alpha={study.best_params['lm_alpha']} and lm_beta={study.best_params['lm_beta']} with WER={study.best_value}"
+    )
 
 
 if __name__ == '__main__':

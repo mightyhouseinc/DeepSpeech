@@ -31,9 +31,7 @@ def main():
         'soundfile',
     ]
 
-    decoder_pypi_dep = [
-        'ds_ctcdecoder == {}'.format(version)
-    ]
+    decoder_pypi_dep = [f'ds_ctcdecoder == {version}']
 
     tensorflow_pypi_dep = [
         'tensorflow == 1.15.4'

@@ -15,13 +15,13 @@ class STMSegment(object):
         self._labels      = tokens[5]
         self._transcript  = ""
         for token in tokens[6:]:
-          self._transcript += token + " "
+            self._transcript += f"{token} "
         # We need to do the encode-decode dance here because encode
         # returns a bytes() object on Python 3, and text_to_char_array
         # expects a string.
         self._transcript = unicodedata.normalize("NFKD", self._transcript.strip())  \
-                                      .encode("ascii", "ignore")                    \
-                                      .decode("ascii", "ignore")
+                                          .encode("ascii", "ignore")                    \
+                                          .decode("ascii", "ignore")
 
     @property
     def filename(self):
@@ -59,6 +59,6 @@ def parse_stm_file(stm_file):
     with codecs.open(stm_file, encoding="utf-8") as stm_lines:
         for stm_line in stm_lines:
             stmSegment = STMSegment(stm_line)
-            if not "ignore_time_segment_in_scoring" == stmSegment.transcript:
+            if stmSegment.transcript != "ignore_time_segment_in_scoring":
                 stm_segments.append(stmSegment)
     return stm_segments

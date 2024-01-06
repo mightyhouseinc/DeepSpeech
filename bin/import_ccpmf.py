@@ -139,22 +139,24 @@ def _maybe_extract(target_dir, extracted_data, archive, final):
 
     if not os.path.exists(extracted_path):
         if not os.path.exists(archive_path):
-            print('No archive "%s" - building ...' % archive_path)
-            all_zip_parts = glob(archive_path + ".*")
+            print(f'No archive "{archive_path}" - building ...')
+            all_zip_parts = glob(f"{archive_path}.*")
             all_zip_parts.sort()
-            cmdline = "cat {} > {}".format(" ".join(all_zip_parts), archive_path)
-            print('Building with "%s"' % cmdline)
+            cmdline = f'cat {" ".join(all_zip_parts)} > {archive_path}'
+            print(f'Building with "{cmdline}"')
             subprocess.check_call(cmdline, shell=True, cwd=target_dir)
             assert os.path.exists(archive_path)
 
-        print('No directory "%s" - extracting archive %s ...' % (extracted_path, archive_path))
+        print(
+            f'No directory "{extracted_path}" - extracting archive {archive_path} ...'
+        )
         with zipfile.ZipFile(archive_path) as zip_f:
             zip_f.extractall(extracted_path)
 
         with zipfile.ZipFile(final_archive) as zip_f:
             zip_f.extractall(target_dir)
     else:
-        print('Found directory "%s" - not extracting it from archive.' % extracted_path)
+        print(f'Found directory "{extracted_path}" - not extracting it from archive.')
 
 def _maybe_create_sources(dir):
     dataset_sources = os.path.join(dir, "data.txt")
@@ -170,17 +172,17 @@ def _maybe_create_sources(dir):
             b_xml = os.path.splitext(os.path.basename(f_xml))[0]
             a_mp3 = b_mp3.split('_')
             a_xml = b_xml.split('_')
-            score = 0
             date_mp3 = a_mp3[0]
             date_xml = a_xml[0]
 
             if date_mp3 != date_xml:
                 continue
 
-            for i in range(min(len(a_mp3), len(a_xml))):
-                if (a_mp3[i] == a_xml[i]):
-                    score += 1
-
+            score = sum(
+                1
+                for i in range(min(len(a_mp3), len(a_xml)))
+                if (a_mp3[i] == a_xml[i])
+            )
             if score >= 1:
                 MP3_XML_Scores.append((f_mp3, f_xml, score))
 
@@ -202,15 +204,15 @@ def _maybe_create_sources(dir):
             print("here:", MP3_XML_Fin[score][s_mp3], s_xml, file=sys.stderr)
 
     with open(dataset_sources, "w") as ds:
-        for score in MP3_XML_Fin:
-            for mp3 in MP3_XML_Fin[score]:
+        for score, value in MP3_XML_Fin.items():
+            for mp3 in value:
                 xml = MP3_XML_Fin[score][mp3]
                 if os.path.getsize(mp3) > 0 and os.path.getsize(xml) > 0:
                     mp3 = os.path.relpath(mp3, dir)
                     xml = os.path.relpath(xml, dir)
                     ds.write('{},{},{:0.2e}\n'.format(xml, mp3, 2.5e-4))
                 else:
-                    print("Empty file {} or {}".format(mp3, xml), file=sys.stderr)
+                    print(f"Empty file {mp3} or {xml}", file=sys.stderr)
 
     print("Missing XML pairs:", MP3, file=sys.stderr)
     return dataset_sources
@@ -238,9 +240,15 @@ def maybe_normalize_for_digits(label):
                     maybe_minutes = maybe_date_or_time[0][1]
                     maybe_seconds = maybe_date_or_time[0][2]
                     if len(maybe_seconds) > 0:
-                        label = label.replace("{}:{}:{}".format(maybe_hours, maybe_minutes, maybe_seconds), "{} heures {} minutes et {} secondes".format(maybe_hours, maybe_minutes, maybe_seconds))
+                        label = label.replace(
+                            f"{maybe_hours}:{maybe_minutes}:{maybe_seconds}",
+                            f"{maybe_hours} heures {maybe_minutes} minutes et {maybe_seconds} secondes",
+                        )
                     else:
-                        label = label.replace("{}:{}".format(maybe_hours, maybe_minutes), "{} heures et {} minutes".format(maybe_hours, maybe_minutes))
+                        label = label.replace(
+                            f"{maybe_hours}:{maybe_minutes}",
+                            f"{maybe_hours} heures et {maybe_minutes} minutes",
+                        )
 
     new_label = []
     # pylint: disable=too-many-nested-blocks
@@ -261,7 +269,7 @@ def maybe_normalize_for_digits(label):
                         try:
                             nc = num2words(c, lang="fr") + "-"
                         except decimal.InvalidOperation as ex:
-                            print("decimal.InvalidOperation: '{}'".format(s))
+                            print(f"decimal.InvalidOperation: '{s}'")
                             raise ex
                     ns.append(nc)
                 s = "".join(s)
@@ -269,7 +277,7 @@ def maybe_normalize_for_digits(label):
                 try:
                     s = num2words(s, lang="fr")
                 except decimal.InvalidOperation as ex:
-                    print("decimal.InvalidOperation: '{}'".format(s))
+                    print(f"decimal.InvalidOperation: '{s}'")
                     raise ex
         new_label.append(s)
     return " ".join(new_label)
@@ -359,7 +367,7 @@ def _maybe_import_data(xml_file, audio_source, target_dir, rel_tol=1e-1):
         os.makedirs(wav_root)
 
     source_frames = int(subprocess.check_output(["soxi", "-s", audio_source], stderr=subprocess.STDOUT))
-    print("Source audio length: %s" % secs_to_hours(source_frames / SAMPLE_RATE))
+    print(f"Source audio length: {secs_to_hours(source_frames / SAMPLE_RATE)}")
 
     # Get audiofile path and transcript for each sentence in tsv
     samples = []
@@ -409,7 +417,7 @@ def _maybe_import_data(xml_file, audio_source, target_dir, rel_tol=1e-1):
     num_samples = len(samples)
     _rows = []
 
-    print("Processing XML data: {}".format(xml_file))
+    print(f"Processing XML data: {xml_file}")
     pool = Pool()
     bar = progressbar.ProgressBar(max_value=num_samples, widgets=SIMPLE_BAR)
     for i, processed in enumerate(pool.imap_unordered(one_sample, samples), start=1):
@@ -432,7 +440,7 @@ def _maybe_import_data(xml_file, audio_source, target_dir, rel_tol=1e-1):
 
 def _maybe_convert_wav(mp3_filename, _wav_filename):
     if not os.path.exists(_wav_filename):
-        print("Converting {} to WAV file: {}".format(mp3_filename, _wav_filename))
+        print(f"Converting {mp3_filename} to WAV file: {_wav_filename}")
         transformer = sox.Transformer()
         transformer.convert(samplerate=SAMPLE_RATE, n_channels=CHANNELS, bitdepth=BIT_DEPTH)
         try:

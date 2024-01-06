@@ -81,13 +81,15 @@ class Sample:
         else:
             self.audio = raw_data
             if self.audio_format is None:
-                raise ValueError('For audio type "{}" parameter "audio_format" is mandatory'.format(self.audio_type))
+                raise ValueError(
+                    f'For audio type "{self.audio_type}" parameter "audio_format" is mandatory'
+                )
             if audio_type == AUDIO_TYPE_PCM:
                 self.duration = get_pcm_duration(len(self.audio), self.audio_format)
             elif audio_type == AUDIO_TYPE_NP:
                 self.duration = get_np_duration(len(self.audio), self.audio_format)
             else:
-                raise ValueError('Unsupported audio type: {}'.format(self.audio_type))
+                raise ValueError(f'Unsupported audio type: {self.audio_type}')
 
     def change_audio_type(self, new_audio_type, bitrate=None):
         """
@@ -118,8 +120,9 @@ class Sample:
             audio_bytes.seek(0)
             self.audio = audio_bytes
         else:
-            raise RuntimeError('Changing audio representation type from "{}" to "{}" not supported'
-                               .format(self.audio_type, new_audio_type))
+            raise RuntimeError(
+                f'Changing audio representation type from "{self.audio_type}" to "{new_audio_type}" not supported'
+            )
         self.audio_type = new_audio_type
 
 
@@ -239,8 +242,11 @@ def read_frames(wav_file, frame_duration_ms=30, yield_remainder=False):
 
 def read_frames_from_file(audio_path, audio_format=DEFAULT_FORMAT, frame_duration_ms=30, yield_remainder=False):
     with AudioFile(audio_path, audio_format=audio_format) as wav_file:
-        for frame in read_frames(wav_file, frame_duration_ms=frame_duration_ms, yield_remainder=yield_remainder):
-            yield frame
+        yield from read_frames(
+            wav_file,
+            frame_duration_ms=frame_duration_ms,
+            yield_remainder=yield_remainder,
+        )
 
 
 def vad_split(audio_frames,
@@ -362,8 +368,7 @@ def read_ogg_opus(ogg_file):
 
     if error.value != 0:
         raise ValueError(
-            ("Ogg/Opus buffer could not be read."
-             "Error code: {}").format(error.value)
+            f"Ogg/Opus buffer could not be read.Error code: {error.value}"
         )
 
     channel_count = pyogg.opus.op_channel_count(opusfile, -1)
@@ -416,10 +421,7 @@ def read_ogg_opus(ogg_file):
 
         # Check for errors
         if ns < 0:
-            raise ValueError(
-                "Error while reading OggOpus buffer. "+
-                "Error code: {}".format(ns)
-            )
+            raise ValueError(f"Error while reading OggOpus buffer. Error code: {ns}")
 
         # Increment the pointer
         buf_ptr.value += (
@@ -470,7 +472,7 @@ def read_audio(audio_type, audio_file):
         return read_opus(audio_file)
     if audio_type == AUDIO_TYPE_OGG_OPUS:
         return read_ogg_opus(audio_file)
-    raise ValueError('Unsupported audio type: {}'.format(audio_type))
+    raise ValueError(f'Unsupported audio type: {audio_type}')
 
 
 def write_audio(audio_type, audio_file, pcm_data, audio_format=DEFAULT_FORMAT, bitrate=None):
@@ -478,7 +480,7 @@ def write_audio(audio_type, audio_file, pcm_data, audio_format=DEFAULT_FORMAT, b
         return write_wav(audio_file, pcm_data, audio_format=audio_format)
     if audio_type == AUDIO_TYPE_OPUS:
         return write_opus(audio_file, pcm_data, audio_format=audio_format, bitrate=bitrate)
-    raise ValueError('Unsupported audio type: {}'.format(audio_type))
+    raise ValueError(f'Unsupported audio type: {audio_type}')
 
 
 def read_wav_duration(wav_file):
@@ -504,8 +506,7 @@ def read_ogg_opus_duration(ogg_file):
 
     if error.value != 0:
         raise ValueError(
-            ("Ogg/Opus buffer could not be read."
-             "Error code: {}").format(error.value)
+            f"Ogg/Opus buffer could not be read.Error code: {error.value}"
         )
 
     pcm_buffer_size = pyogg.opus.op_pcm_total(opusfile, -1)
@@ -524,7 +525,7 @@ def read_duration(audio_type, audio_file):
         return read_opus_duration(audio_file)
     if audio_type == AUDIO_TYPE_OGG_OPUS:
         return read_ogg_opus_duration(audio_file)
-    raise ValueError('Unsupported audio type: {}'.format(audio_type))
+    raise ValueError(f'Unsupported audio type: {audio_type}')
 
 
 def read_wav_format(wav_file):
@@ -550,8 +551,7 @@ def read_ogg_opus_format(ogg_file):
 
     if error.value != 0:
         raise ValueError(
-            ("Ogg/Opus buffer could not be read."
-             "Error code: {}").format(error.value)
+            f"Ogg/Opus buffer could not be read.Error code: {error.value}"
         )
 
     channel_count = pyogg.opus.op_channel_count(opusfile, -1)
@@ -569,12 +569,12 @@ def read_format(audio_type, audio_file):
         return read_opus_format(audio_file)
     if audio_type == AUDIO_TYPE_OGG_OPUS:
         return read_ogg_opus_format(audio_file)
-    raise ValueError('Unsupported audio type: {}'.format(audio_type))
+    raise ValueError(f'Unsupported audio type: {audio_type}')
 
 
 def get_dtype(audio_format):
     if audio_format.width not in [1, 2, 4]:
-        raise ValueError('Unsupported sample width: {}'.format(audio_format.width))
+        raise ValueError(f'Unsupported sample width: {audio_format.width}')
     return [None, np.int8, np.int16, None, np.int32][audio_format.width]
 
 

@@ -20,9 +20,7 @@ def path_exists_remote(path):
     Wrapper that allows existance check of local and remote paths like
     `gs://...`
     """
-    if is_remote_path(path):
-        return gfile.exists(path)
-    return os.path.exists(path)
+    return gfile.exists(path) if is_remote_path(path) else os.path.exists(path)
 
 
 def copy_remote(src, dst, overwrite=False):
@@ -52,18 +50,14 @@ def isdir_remote(path):
     """
     Wrapper to check if remote and local paths are directories
     """
-    if is_remote_path(path):
-        return gfile.isdir(path)
-    return os.path.isdir(path)
+    return gfile.isdir(path) if is_remote_path(path) else os.path.isdir(path)
 
 
 def listdir_remote(path):
     """
     Wrapper to list paths in local dirs (alternative to using a glob, I suppose)
     """
-    if is_remote_path(path):
-        return gfile.listdir(path)
-    return os.listdir(path)
+    return gfile.listdir(path) if is_remote_path(path) else os.listdir(path)
 
 
 def glob_remote(filename):

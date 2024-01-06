@@ -30,7 +30,7 @@ def get_samples_in_play_order():
         elif index < 0:
             yield samples[len(samples) + index]
         elif index >= len(samples):
-            print("No sample with index {}".format(CLI_ARGS.start))
+            print(f"No sample with index {CLI_ARGS.start}")
             sys.exit(1)
         else:
             yield samples[index]
@@ -50,9 +50,9 @@ def play_collection():
                                          clock=CLI_ARGS.clock)
     for sample in samples:
         if not CLI_ARGS.quiet:
-            print('Sample "{}"'.format(sample.sample_id), file=sys.stderr)
+            print(f'Sample "{sample.sample_id}"', file=sys.stderr)
             if isinstance(sample, LabeledSample):
-                print('  "{}"'.format(sample.transcript), file=sys.stderr)
+                print(f'  "{sample.transcript}"', file=sys.stderr)
         if CLI_ARGS.pipe:
             sample.change_audio_type(AUDIO_TYPE_WAV)
             sys.stdout.buffer.write(sample.audio.getvalue())

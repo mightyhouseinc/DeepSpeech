@@ -62,7 +62,7 @@ def transcribe_file(audio_path, tlog_path):
                 decoded = ctc_beam_search_decoder_batch(batch_logits, batch_lengths, Config.alphabet, FLAGS.beam_width,
                                                         num_processes=num_processes,
                                                         scorer=scorer)
-                decoded = list(d[0][1] for d in decoded)
+                decoded = [d[0][1] for d in decoded]
                 transcripts.extend(zip(starts, ends, decoded))
             transcripts.sort(key=lambda t: t[0])
             transcripts = [{'start': int(start),
@@ -78,14 +78,16 @@ def transcribe_many(src_paths,dst_paths):
         p = Process(target=transcribe_file, args=(src_paths[i], dst_paths[i]))
         p.start()
         p.join()
-        log_progress('Transcribed file {} of {} from "{}" to "{}"'.format(i + 1, len(src_paths), src_paths[i], dst_paths[i]))
+        log_progress(
+            f'Transcribed file {i + 1} of {len(src_paths)} from "{src_paths[i]}" to "{dst_paths[i]}"'
+        )
         pbar.update(i)
     pbar.finish()
 
 
 def transcribe_one(src_path, dst_path):
     transcribe_file(src_path, dst_path)
-    log_info('Transcribed file "{}" to "{}"'.format(src_path, dst_path))
+    log_info(f'Transcribed file "{src_path}" to "{dst_path}"')
 
 
 def resolve(base_path, spec_path):
@@ -122,12 +124,19 @@ def main(_):
                 transcribe_many(src_paths,dst_paths)
             else:
                 # Transcribe one file
-                dst_path = os.path.abspath(FLAGS.dst) if FLAGS.dst else os.path.splitext(src_path)[0] + '.tlog'
+                dst_path = (
+                    os.path.abspath(FLAGS.dst)
+                    if FLAGS.dst
+                    else f'{os.path.splitext(src_path)[0]}.tlog'
+                )
                 if os.path.isfile(dst_path):
                     if FLAGS.force:
                         transcribe_one(src_path, dst_path)
                     else:
-                        fail('Destination file "{}" already existing - use --force for overwriting'.format(dst_path), code=0)
+                        fail(
+                            f'Destination file "{dst_path}" already existing - use --force for overwriting',
+                            code=0,
+                        )
                 elif os.path.isdir(os.path.dirname(dst_path)):
                     transcribe_one(src_path, dst_path)
                 else:
@@ -140,9 +149,9 @@ def main(_):
             else:
                 if not FLAGS.recursive:
                     print("If you wish to recursively scan --src, then you must use --recursive")
-                    wav_paths = glob.glob(src_path + "/*.wav")
+                    wav_paths = glob.glob(f"{src_path}/*.wav")
                 else:
-                    wav_paths = glob.glob(src_path + "/**/*.wav")
+                    wav_paths = glob.glob(f"{src_path}/**/*.wav")
                 dst_paths = [path.replace('.wav','.tlog') for path in wav_paths]
                 transcribe_many(wav_paths,dst_paths)
 

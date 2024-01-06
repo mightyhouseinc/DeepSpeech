@@ -59,7 +59,12 @@ def main(args, _):
 
     processes = []
     for i in range(args.proc):
-        worker_process = Process(target=tflite_worker, args=(args.model, args.scorer, work_todo, work_done, i), daemon=True, name='tflite_process_{}'.format(i))
+        worker_process = Process(
+            target=tflite_worker,
+            args=(args.model, args.scorer, work_todo, work_done, i),
+            daemon=True,
+            name=f'tflite_process_{i}',
+        )
         worker_process.start()        # Launch reader() as a separate python process
         processes.append(worker_process)
 
@@ -97,12 +102,12 @@ def main(args, _):
     _ = calculate_and_print_report(wav_filenames, ground_truths, predictions, losses, args.csv)
 
     if args.dump:
-        with open(args.dump + '.txt', 'w') as ftxt, open(args.dump + '.out', 'w') as fout:
+        with (open(f'{args.dump}.txt', 'w') as ftxt, open(f'{args.dump}.out', 'w') as fout):
             for wav, txt, out in zip(wavlist, ground_truths, predictions):
                 ftxt.write('%s %s\n' % (wav, txt))
                 fout.write('%s %s\n' % (wav, out))
-            print('Reference texts dumped to %s.txt' % args.dump)
-            print('Transcription   dumped to %s.out' % args.dump)
+            print(f'Reference texts dumped to {args.dump}.txt')
+            print(f'Transcription   dumped to {args.dump}.out')
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Computing TFLite accuracy')

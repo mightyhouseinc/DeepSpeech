@@ -12,16 +12,14 @@ def text_to_char_array(transcript, alphabet, context=''):
     if not alphabet.CanEncode(transcript):
         # Provide the row context (especially wav_filename) for alphabet errors
         raise ValueError(
-            'Alphabet cannot encode transcript "{}" while processing sample "{}", '
-            'check that your alphabet contains all characters in the training corpus. '
-            'Missing characters are: {}.'
-            .format(transcript, context, list(ch for ch in transcript if not alphabet.CanEncodeSingle(ch))))
+            f'Alphabet cannot encode transcript "{transcript}" while processing sample "{context}", check that your alphabet contains all characters in the training corpus. Missing characters are: {[ch for ch in transcript if not alphabet.CanEncodeSingle(ch)]}.'
+        )
 
     encoded = alphabet.Encode(transcript)
     if len(encoded) == 0:
-        raise ValueError('While processing {}: Found an empty transcript! '
-                         'You must include a transcript for all training data.'
-                         .format(context))
+        raise ValueError(
+            f'While processing {context}: Found an empty transcript! You must include a transcript for all training data.'
+        )
     return encoded
 
 

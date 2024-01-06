@@ -11,9 +11,7 @@ def read_csvs(csv_files):
     # Relative paths are relative to CSV location
     def absolutify(csv, path):
         path = Path(path)
-        if path.is_absolute():
-            return str(path)
-        return str(csv.parent / path)
+        return str(path) if path.is_absolute() else str(csv.parent / path)
 
     sets = []
     for csv in csv_files:

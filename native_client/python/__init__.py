@@ -15,7 +15,7 @@ if platform.system().lower() == "windows":
     else:
         # Before Pythin 3.8 we need to change the PATH to include the proper
         # directory for the dynamic linker
-        os.environ['PATH'] = dslib_path + ';' + os.environ['PATH']
+        os.environ['PATH'] = f'{dslib_path};' + os.environ['PATH']
 
 import deepspeech
 

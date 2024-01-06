@@ -43,14 +43,14 @@ def maybe_download(archive_url, target_dir, ldc_dataset):
     archive_path = os.path.join(target_dir, ldc_dataset)
     ldc_path = archive_url + ldc_dataset
     if not os.path.exists(target_dir):
-        print('No path "%s" - creating ...' % target_dir)
+        print(f'No path "{target_dir}" - creating ...')
         os.makedirs(target_dir)
 
     if not os.path.exists(archive_path):
-        print('No archive "%s" - downloading...' % archive_path)
+        print(f'No archive "{archive_path}" - downloading...')
         download_file(target_dir, ldc_path)
     else:
-        print('Found archive "%s" - not downloading.' % archive_path)
+        print(f'Found archive "{archive_path}" - not downloading.')
     return archive_path
 
 
@@ -75,7 +75,9 @@ def _download_and_preprocess_data(data_dir):
         "swb1_d4",
         "swb_ms98_transcriptions",
     ]
-    assert all([os.path.isdir(os.path.join(target_dir, e)) for e in expected_folders])
+    assert all(
+        os.path.isdir(os.path.join(target_dir, e)) for e in expected_folders
+    )
 
     # Conditionally convert swb sph data to wav
     _maybe_convert_wav(target_dir, "swb1_d1", "swb1_d1-wav")
@@ -143,7 +145,7 @@ def _maybe_convert_wav(data_dir, original_data, converted_data):
                     + "-temp.wav"
                 )
                 temp_wav_file = os.path.join(target_dir, temp_wav_filename)
-                print("converting {} to {}".format(sph_file, temp_wav_file))
+                print(f"converting {sph_file} to {temp_wav_file}")
                 subprocess.check_call(
                     [
                         "sph2pipe",
@@ -156,7 +158,7 @@ def _maybe_convert_wav(data_dir, original_data, converted_data):
                         temp_wav_file,
                     ]
                 )
-                print("upsampling {} to {}".format(temp_wav_file, wav_file))
+                print(f"upsampling {temp_wav_file} to {wav_file}")
                 audioData, frameRate = librosa.load(temp_wav_file, sr=16000, mono=True)
                 soundfile.write(wav_file, audioData, frameRate, "PCM_16")
                 os.remove(temp_wav_file)
@@ -174,7 +176,7 @@ def _parse_transcriptions(trans_file):
             stop_time = float(tokens[2])
             transcript = validate_label(" ".join(tokens[3:]))
 
-            if transcript == None:
+            if transcript is None:
                 continue
 
             # We need to do the encode-decode dance here because encode
@@ -229,7 +231,7 @@ def _maybe_split_wav_and_sentences(data_dir, trans_data, original_data, converte
             )
             wav_file = os.path.join(source_dir, wav_filename)
 
-            print("splitting {} according to {}".format(wav_file, trans_file))
+            print(f"splitting {wav_file} according to {trans_file}")
 
             if not os.path.exists(wav_file):
                 print("skipping. does not exist:" + wav_file)
@@ -309,7 +311,7 @@ def _split_sets(filelist):
 
     return (
         filelist[train_beg:train_end],
-        filelist[dev_beg:dev_end],
+        filelist[dev_beg:test_beg],
         filelist[test_beg:test_end],
     )
 

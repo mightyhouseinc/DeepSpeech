@@ -56,7 +56,7 @@ vv = semver.parse(v)
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 # The short X.Y version
-version = '{}.{}'.format(vv['major'], vv['minor'])
+version = f"{vv['major']}.{vv['minor']}"
 # The full version, including alpha/beta/rc tags
 release = v
 
@@ -205,5 +205,9 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}
 
-extlinks = {'github': ('https://github.com/mozilla/DeepSpeech/blob/v{}/%s'.format(release),
-                      '%s')}
+extlinks = {
+    'github': (
+        f'https://github.com/mozilla/DeepSpeech/blob/v{release}/%s',
+        '%s',
+    )
+}

@@ -114,7 +114,7 @@ def _maybe_convert_wav(data_dir, original_data, converted_data):
                     + ".wav"
                 )
                 wav_file = os.path.join(target_dir, wav_filename)
-                print("converting {} to {}".format(sph_file, wav_file))
+                print(f"converting {sph_file} to {wav_file}")
                 subprocess.check_call(
                     ["sph2pipe", "-c", channel, "-p", "-f", "rif", sph_file, wav_file]
                 )
@@ -180,7 +180,7 @@ def _split_wav_and_sentences(data_dir, trans_data, original_data, converted_data
                 os.path.join(source_dir, wav_filename) for wav_filename in wav_filenames
             ]
 
-            print("splitting {} according to {}".format(wav_files, trans_file))
+            print(f"splitting {wav_files} according to {trans_file}")
 
             origAudios = [
                 librosa.load(wav_file, sr=16000, mono=False) for wav_file in wav_files
@@ -225,7 +225,7 @@ def _split_audio(origAudio, start_time, stop_time):
     stopIndex = int(stop_time * frameRate)
     return (
         audioData[startIndex:stopIndex]
-        if 1 == nChannels
+        if nChannels == 1
         else audioData[:, startIndex:stopIndex]
     )
 
@@ -255,7 +255,7 @@ def _split_sets(filelist):
 
     return (
         filelist[train_beg:train_end],
-        filelist[dev_beg:dev_end],
+        filelist[dev_beg:test_beg],
         filelist[test_beg:test_end],
     )
 

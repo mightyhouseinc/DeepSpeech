@@ -24,7 +24,7 @@ MIN_SECS = 1
 ARCHIVE_DIR_NAME = "VCTK-Corpus"
 ARCHIVE_NAME = "VCTK-Corpus.zip?sequence=2&isAllowed=y"
 ARCHIVE_URL = (
-    "https://datashare.is.ed.ac.uk/bitstream/handle/10283/2651/" + ARCHIVE_NAME
+    f"https://datashare.is.ed.ac.uk/bitstream/handle/10283/2651/{ARCHIVE_NAME}"
 )
 
 
@@ -93,15 +93,13 @@ def one_sample(sample):
 
 def _maybe_prepare_set(target_csv):
     samples = sorted(os.listdir(target_csv))
-    new_samples = []
-    for s in samples:
-        new_samples.append(os.path.join(target_csv, s))
+    new_samples = [os.path.join(target_csv, s) for s in samples]
     samples = new_samples
     return samples
 
 
 def _write_csv(extracted_dir, txt_dir, target_dir):
-    print(f"Writing CSV file")
+    print("Writing CSV file")
     dset_abs_path = extracted_dir
     dset_txt_abs_path = txt_dir
 

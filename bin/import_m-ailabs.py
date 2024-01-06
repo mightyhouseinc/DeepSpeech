@@ -26,7 +26,7 @@ MAX_SECS = 15
 
 ARCHIVE_DIR_NAME = "{language}"
 ARCHIVE_NAME = "{language}.tgz"
-ARCHIVE_URL = "https://data.solak.de/data/Training/stt_tts/" + ARCHIVE_NAME
+ARCHIVE_URL = f"https://data.solak.de/data/Training/stt_tts/{ARCHIVE_NAME}"
 
 
 def _download_and_preprocess_data(target_dir):
@@ -44,14 +44,14 @@ def _maybe_extract(target_dir, extracted_data, archive_path):
     # If target_dir/extracted_data does not exist, extract archive in target_dir
     extracted_path = os.path.join(target_dir, extracted_data)
     if not os.path.exists(extracted_path):
-        print('No directory "%s" - extracting archive...' % extracted_path)
+        print(f'No directory "{extracted_path}" - extracting archive...')
         if not os.path.isdir(extracted_path):
             os.mkdir(extracted_path)
         tar = tarfile.open(archive_path)
         tar.extractall(extracted_path)
         tar.close()
     else:
-        print('Found directory "%s" - not extracting it from archive.' % archive_path)
+        print(f'Found directory "{archive_path}" - not extracting it from archive.')
 
 
 def one_sample(sample):
@@ -60,7 +60,7 @@ def one_sample(sample):
     file_size = -1
     frames = 0
     if os.path.exists(wav_filename):
-        tmp_filename = os.path.splitext(wav_filename)[0]+'.tmp.wav'
+        tmp_filename = f'{os.path.splitext(wav_filename)[0]}.tmp.wav'
         subprocess.check_call(
             ['sox', wav_filename, '-r', str(SAMPLE_RATE), '-c', '1', '-b', '16', tmp_filename], stderr=subprocess.STDOUT
         )
@@ -117,9 +117,9 @@ def _maybe_convert_sets(target_dir, extracted_data):
         ):  # pylint: disable=cell-var-from-loop
             continue
         with open(record, "r") as rec:
-            for re in rec.readlines():
+            for re in rec:
                 re = re.strip().split("|")
-                audio = os.path.join(os.path.dirname(record), "wavs", re[0] + ".wav")
+                audio = os.path.join(os.path.dirname(record), "wavs", f"{re[0]}.wav")
                 transcript = re[2]
                 samples.append((audio, transcript))
 

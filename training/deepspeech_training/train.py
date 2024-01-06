@@ -161,8 +161,6 @@ def rnn_impl_static_rnn(x, seq_length, previous_state, reuse):
 
 
 def create_model(batch_x, seq_length, dropout, reuse=False, batch_size=None, previous_state=None, overlap=True, rnn_impl=rnn_impl_lstmblockfusedcell):
-    layers = {}
-
     # Input shape: [batch_size, n_steps, n_input + 2*n_input*n_context]
     if not batch_size:
         batch_size = tf.shape(input=batch_x)[0]
@@ -178,8 +176,7 @@ def create_model(batch_x, seq_length, dropout, reuse=False, batch_size=None, pre
     batch_x = tf.transpose(a=batch_x, perm=[1, 0, 2, 3])
     # Reshape to prepare input for first layer
     batch_x = tf.reshape(batch_x, [-1, Config.n_input + 2*Config.n_input*Config.n_context]) # (n_steps*batch_size, n_input + 2*n_input*n_context)
-    layers['input_reshaped'] = batch_x
-
+    layers = {'input_reshaped': batch_x}
     # The next three blocks will pass `batch_x` through three hidden layers with
     # clipped RELU activation and dropout.
     layers['layer_1'] = layer_1 = dense('layer_1', batch_x, Config.n_hidden_1, dropout_rate=dropout[0], layer_norm=FLAGS.layer_norm)
@@ -266,11 +263,12 @@ def calculate_mean_edit_distance_and_loss(iterator, dropout, reuse):
 # we will use the Adam method for optimization (http://arxiv.org/abs/1412.6980),
 # because, generally, it requires less fine-tuning.
 def create_optimizer(learning_rate_var):
-    optimizer = tfv1.train.AdamOptimizer(learning_rate=learning_rate_var,
-                                         beta1=FLAGS.beta1,
-                                         beta2=FLAGS.beta2,
-                                         epsilon=FLAGS.epsilon)
-    return optimizer
+    return tfv1.train.AdamOptimizer(
+        learning_rate=learning_rate_var,
+        beta1=FLAGS.beta1,
+        beta2=FLAGS.beta2,
+        epsilon=FLAGS.epsilon,
+    )
 
 
 # Towers
@@ -388,10 +386,19 @@ def log_variable(variable, gradient=None):
     '''
     name = variable.name.replace(':', '_')
     mean = tf.reduce_mean(input_tensor=variable)
-    tfv1.summary.scalar(name='%s/mean'   % name, tensor=mean)
-    tfv1.summary.scalar(name='%s/sttdev' % name, tensor=tf.sqrt(tf.reduce_mean(input_tensor=tf.square(variable - mean))))
-    tfv1.summary.scalar(name='%s/max'    % name, tensor=tf.reduce_max(input_tensor=variable))
-    tfv1.summary.scalar(name='%s/min'    % name, tensor=tf.reduce_min(input_tensor=variable))
+    tfv1.summary.scalar(name=f'{name}/mean', tensor=mean)
+    tfv1.summary.scalar(
+        name=f'{name}/sttdev',
+        tensor=tf.sqrt(
+            tf.reduce_mean(input_tensor=tf.square(variable - mean))
+        ),
+    )
+    tfv1.summary.scalar(
+        name=f'{name}/max', tensor=tf.reduce_max(input_tensor=variable)
+    )
+    tfv1.summary.scalar(
+        name=f'{name}/min', tensor=tf.reduce_min(input_tensor=variable)
+    )
     tfv1.summary.histogram(name=name, values=variable)
     if gradient is not None:
         if isinstance(gradient, tf.IndexedSlices):
@@ -399,7 +406,7 @@ def log_variable(variable, gradient=None):
         else:
             grad_values = gradient
         if grad_values is not None:
-            tfv1.summary.histogram(name='%s/gradients' % name, values=grad_values)
+            tfv1.summary.histogram(name=f'{name}/gradients', values=grad_values)
 
 
 def log_grads_and_vars(grads_and_vars):
@@ -570,12 +577,11 @@ def train():
             checkpoint_time = time.time()
 
             if is_train and FLAGS.cache_for_epochs > 0 and FLAGS.feature_cache:
-                feature_cache_index = FLAGS.feature_cache + '.index'
+                feature_cache_index = f'{FLAGS.feature_cache}.index'
                 if epoch % FLAGS.cache_for_epochs == 0 and os.path.isfile(feature_cache_index):
                     log_info('Invalidating feature cache')
                     remove_remote(feature_cache_index)  # this will let TF also overwrite the related cache data files
 
-            # Setup progress bar
             class LossWidget(progressbar.widgets.FormatLabel):
                 def __init__(self):
                     progressbar.widgets.FormatLabel.__init__(self, format='Loss: %(mean_loss)f')
@@ -702,7 +708,9 @@ def train():
                             # Overwrite best checkpoint with new learning rate value
                             save_path = best_dev_saver.save(session, best_dev_path, global_step=global_step,
                                                             latest_filename='best_dev_checkpoint')
-                            log_info("Saved best validating model with reduced learning rate to: %s" % (save_path))
+                            log_info(
+                                f"Saved best validating model with reduced learning rate to: {save_path}"
+                            )
 
                 if FLAGS.metrics_files:
                     # Read only metrics, not affecting best validation loss tracking
@@ -757,11 +765,7 @@ def create_inference_graph(batch_size=1, n_steps=16, tflite=False):
     # One rate per layer
     no_dropout = [None] * 6
 
-    if tflite:
-        rnn_impl = rnn_impl_static_rnn
-    else:
-        rnn_impl = rnn_impl_lstmblockfusedcell
-
+    rnn_impl = rnn_impl_static_rnn if tflite else rnn_impl_lstmblockfusedcell
     logits, layers = create_model(batch_x=input_tensor,
                                   batch_size=batch_size,
                                   seq_length=seq_length if not FLAGS.export_tflite else None,
@@ -859,7 +863,7 @@ def export():
         # Restore variables from checkpoint
         load_graph_for_evaluation(session)
 
-        output_filename = FLAGS.export_file_name + '.pb'
+        output_filename = f'{FLAGS.export_file_name}.pb'
         if FLAGS.remove_export:
             if isdir_remote(FLAGS.export_dir):
                 log_info('Removing old export')
@@ -894,46 +898,50 @@ def export():
             with open_remote(output_tflite_path, 'wb') as fout:
                 fout.write(tflite_model)
 
-        log_info('Models exported at %s' % (FLAGS.export_dir))
+        log_info(f'Models exported at {FLAGS.export_dir}')
 
-    metadata_fname = os.path.join(FLAGS.export_dir, '{}_{}_{}.md'.format(
-        FLAGS.export_author_id,
-        FLAGS.export_model_name,
-        FLAGS.export_model_version))
+    metadata_fname = os.path.join(
+        FLAGS.export_dir,
+        f'{FLAGS.export_author_id}_{FLAGS.export_model_name}_{FLAGS.export_model_version}.md',
+    )
 
     model_runtime = 'tflite' if FLAGS.export_tflite else 'tensorflow'
     with open_remote(metadata_fname, 'w') as f:
         f.write('---\n')
-        f.write('author: {}\n'.format(FLAGS.export_author_id))
-        f.write('model_name: {}\n'.format(FLAGS.export_model_name))
-        f.write('model_version: {}\n'.format(FLAGS.export_model_version))
-        f.write('contact_info: {}\n'.format(FLAGS.export_contact_info))
-        f.write('license: {}\n'.format(FLAGS.export_license))
-        f.write('language: {}\n'.format(FLAGS.export_language))
-        f.write('runtime: {}\n'.format(model_runtime))
-        f.write('min_ds_version: {}\n'.format(FLAGS.export_min_ds_version))
-        f.write('max_ds_version: {}\n'.format(FLAGS.export_max_ds_version))
+        f.write(f'author: {FLAGS.export_author_id}\n')
+        f.write(f'model_name: {FLAGS.export_model_name}\n')
+        f.write(f'model_version: {FLAGS.export_model_version}\n')
+        f.write(f'contact_info: {FLAGS.export_contact_info}\n')
+        f.write(f'license: {FLAGS.export_license}\n')
+        f.write(f'language: {FLAGS.export_language}\n')
+        f.write(f'runtime: {model_runtime}\n')
+        f.write(f'min_ds_version: {FLAGS.export_min_ds_version}\n')
+        f.write(f'max_ds_version: {FLAGS.export_max_ds_version}\n')
         f.write('acoustic_model_url: <replace this with a publicly available URL of the acoustic model>\n')
         f.write('scorer_url: <replace this with a publicly available URL of the scorer, if present>\n')
         f.write('---\n')
-        f.write('{}\n'.format(FLAGS.export_description))
+        f.write(f'{FLAGS.export_description}\n')
 
-    log_info('Model metadata file saved to {}. Before submitting the exported model for publishing make sure all information in the metadata file is correct, and complete the URL fields.'.format(metadata_fname))
+    log_info(
+        f'Model metadata file saved to {metadata_fname}. Before submitting the exported model for publishing make sure all information in the metadata file is correct, and complete the URL fields.'
+    )
 
 
 def package_zip():
     # --export_dir path/to/export/LANG_CODE/ => path/to/export/LANG_CODE.zip
     export_dir = os.path.join(os.path.abspath(FLAGS.export_dir), '') # Force ending '/'
     if is_remote_path(export_dir):
-        log_error("Cannot package remote path zip %s. Please do this manually." % export_dir)
+        log_error(
+            f"Cannot package remote path zip {export_dir}. Please do this manually."
+        )
         return
 
     zip_filename = os.path.dirname(export_dir)
-    
+
     shutil.copy(FLAGS.scorer_path, export_dir)
 
     archive = shutil.make_archive(zip_filename, 'zip', export_dir)
-    log_info('Exported packaged model {}'.format(archive))
+    log_info(f'Exported packaged model {archive}')
 
 
 def do_single_file_inference(input_file_path):
@@ -1017,7 +1025,7 @@ def main(_):
             FLAGS.export_tflite = True
 
             if listdir_remote(FLAGS.export_dir):
-                log_error('Directory {} is not empty, please fix this.'.format(FLAGS.export_dir))
+                log_error(f'Directory {FLAGS.export_dir} is not empty, please fix this.')
                 sys.exit(1)
 
             export()

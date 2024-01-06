@@ -83,7 +83,7 @@ def _preprocess_data(args):
         for filename in fnmatch.filter(filenames, "*.WAV"):
             sph_file = os.path.join(root, filename)
             wav_file = os.path.join(root, filename)[:-4] + "_rif.wav"
-            print("converting {} to {}".format(sph_file, wav_file))
+            print(f"converting {sph_file} to {wav_file}")
             subprocess.check_call(["sox", sph_file, wav_file])
 
     print("Preprocessing Complete")
@@ -114,8 +114,10 @@ def _preprocess_data(args):
             # if ignoreSAsentences we only want those without SA in the name
             # OR
             # if not ignoreSAsentences we want all to be added
-            if (ignoreSASentences and not ("SA" in os.path.basename(full_wav))) or (
-                not ignoreSASentences
+            if (
+                ignoreSASentences
+                and "SA" not in os.path.basename(full_wav)
+                or not ignoreSASentences
             ):
                 if "train" in full_wav.lower():
                     train_list_wavs.append(full_wav)

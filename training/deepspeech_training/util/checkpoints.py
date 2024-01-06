@@ -17,7 +17,7 @@ def _load_checkpoint(session, checkpoint_path, allow_drop_layers, allow_lr_init=
 
     # We explicitly allow the learning rate variable to be missing for backwards
     # compatibility with older checkpoints.
-    lr_var = set(v for v in load_vars if v.op.name == 'learning_rate')
+    lr_var = {v for v in load_vars if v.op.name == 'learning_rate'}
     if lr_var and ('learning_rate' not in vars_in_ckpt or
                     (FLAGS.force_initialize_learning_rate and allow_lr_init)):
         assert len(lr_var) <= 1
@@ -31,7 +31,7 @@ def _load_checkpoint(session, checkpoint_path, allow_drop_layers, allow_lr_init=
         missing_vars = set()
         for v in load_vars:
             if v.op.name not in vars_in_ckpt:
-                log_warn('CUDNN variable not found: %s' % (v.op.name))
+                log_warn(f'CUDNN variable not found: {v.op.name}')
                 missing_vars.add(v)
                 init_vars.add(v)
 
@@ -41,9 +41,9 @@ def _load_checkpoint(session, checkpoint_path, allow_drop_layers, allow_lr_init=
         # are the Adam moment tensors, if they aren't then we have an issue
         missing_var_names = [v.op.name for v in missing_vars]
         if any('Adam' not in v for v in missing_var_names):
-            log_error('Tried to load a CuDNN RNN checkpoint but there were '
-                      'more missing variables than just the Adam moment '
-                      'tensors. Missing variables: {}'.format(missing_var_names))
+            log_error(
+                f'Tried to load a CuDNN RNN checkpoint but there were more missing variables than just the Adam moment tensors. Missing variables: {missing_var_names}'
+            )
             sys.exit(1)
 
     if allow_drop_layers and FLAGS.drop_source_layers > 0:
@@ -67,19 +67,17 @@ def _load_checkpoint(session, checkpoint_path, allow_drop_layers, allow_lr_init=
         load_vars -= init_vars
 
     for v in sorted(load_vars, key=lambda v: v.op.name):
-        log_info('Loading variable from checkpoint: %s' % (v.op.name))
+        log_info(f'Loading variable from checkpoint: {v.op.name}')
         v.load(ckpt.get_tensor(v.op.name), session=session)
 
     for v in sorted(init_vars, key=lambda v: v.op.name):
-        log_info('Initializing variable: %s' % (v.op.name))
+        log_info(f'Initializing variable: {v.op.name}')
         session.run(v.initializer)
 
 
 def _checkpoint_path_or_none(checkpoint_filename):
     checkpoint = tfv1.train.get_checkpoint_state(FLAGS.load_checkpoint_dir, checkpoint_filename)
-    if not checkpoint:
-        return None
-    return checkpoint.model_checkpoint_path
+    return None if not checkpoint else checkpoint.model_checkpoint_path
 
 
 def _initialize_all_variables(session):
@@ -92,30 +90,26 @@ def _load_or_init_impl(session, method_order, allow_drop_layers, allow_lr_init=T
     for method in method_order:
         # Load best validating checkpoint, saved in checkpoint file 'best_dev_checkpoint'
         if method == 'best':
-            ckpt_path = _checkpoint_path_or_none('best_dev_checkpoint')
-            if ckpt_path:
-                log_info('Loading best validating checkpoint from {}'.format(ckpt_path))
+            if ckpt_path := _checkpoint_path_or_none('best_dev_checkpoint'):
+                log_info(f'Loading best validating checkpoint from {ckpt_path}')
                 return _load_checkpoint(session, ckpt_path, allow_drop_layers, allow_lr_init=allow_lr_init)
             log_info('Could not find best validating checkpoint.')
 
-        # Load most recent checkpoint, saved in checkpoint file 'checkpoint'
         elif method == 'last':
-            ckpt_path = _checkpoint_path_or_none('checkpoint')
-            if ckpt_path:
-                log_info('Loading most recent checkpoint from {}'.format(ckpt_path))
+            if ckpt_path := _checkpoint_path_or_none('checkpoint'):
+                log_info(f'Loading most recent checkpoint from {ckpt_path}')
                 return _load_checkpoint(session, ckpt_path, allow_drop_layers, allow_lr_init=allow_lr_init)
             log_info('Could not find most recent checkpoint.')
 
-        # Initialize all variables
         elif method == 'init':
             log_info('Initializing all variables.')
             return _initialize_all_variables(session)
 
         else:
-            log_error('Unknown initialization method: {}'.format(method))
+            log_error(f'Unknown initialization method: {method}')
             sys.exit(1)
 
-    log_error('All initialization methods failed ({}).'.format(method_order))
+    log_error(f'All initialization methods failed ({method_order}).')
     sys.exit(1)
 
 

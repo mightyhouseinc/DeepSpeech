@@ -62,12 +62,12 @@ def taskcluster_event_context():
     das_context = {}
 
     # Pre-filterting
-    for k in os.environ.keys():
+    for k in os.environ:
         if k == 'GITHUB_HEAD_USER':
             os.environ['GITHUB_HEAD_USER_LOGIN'] = os.environ[k]
             del os.environ['GITHUB_HEAD_USER']
 
-    for k in os.environ.keys():
+    for k in os.environ:
         if k == 'TASK_ID':
             parts = string_to_dict('taskcluster.taskGroupId', os.environ[k])
             das_context = merge_dicts(das_context, parts)

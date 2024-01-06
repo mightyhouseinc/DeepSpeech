@@ -11,11 +11,11 @@ def maybe_download(archive_name, target_dir, archive_url):
     archive_path = path.join(target_dir, archive_name)
 
     if not is_remote_path(target_dir) and not path.exists(target_dir):
-        print('No path "%s" - creating ...' % target_dir)
+        print(f'No path "{target_dir}" - creating ...')
         makedirs(target_dir)
 
     if not path_exists_remote(archive_path):
-        print('No archive "%s" - downloading...' % archive_path)
+        print(f'No archive "{archive_path}" - downloading...')
         req = requests.get(archive_url, stream=True)
         total_size = int(req.headers.get('content-length', 0))
         done = 0
@@ -27,5 +27,5 @@ def maybe_download(archive_name, target_dir, archive_url):
                 f.write(data)
                 bar.update(done)
     else:
-        print('Found archive "%s" - not downloading.' % archive_path)
+        print(f'Found archive "{archive_path}" - not downloading.')
     return archive_path

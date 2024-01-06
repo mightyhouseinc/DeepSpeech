@@ -35,7 +35,7 @@ class GraphAugmentation(Augmentation):
     def __init__(self, p=1.0, domain='spectrogram'):
         super(GraphAugmentation, self).__init__(p)
         if domain not in ['signal', 'spectrogram', 'features']:
-            raise ValueError('Unsupported augmentation domain: {}'.format(domain))
+            raise ValueError(f'Unsupported augmentation domain: {domain}')
         self.domain = domain
 
     def apply(self, tensor, transcript=None, clock=0.0):
@@ -75,9 +75,9 @@ def parse_augmentation(augmentation_spec):
     if not match:
         raise ValueError('Augmentation specification has wrong format')
     cls_name = ''.join(map(lambda p: p[0].upper() + p[1:], match.group('cls').split('_')))
-    augmentation_cls = globals()[cls_name] if cls_name in globals() else None
+    augmentation_cls = globals().get(cls_name, None)
     if augmentation_cls is None or not issubclass(augmentation_cls, Augmentation) or augmentation_cls == Augmentation:
-        raise ValueError('Unknown augmentation: {}'.format(cls_name))
+        raise ValueError(f'Unknown augmentation: {cls_name}')
     parameters = match.group('params')
     parameters = [] if parameters is None else parameters.split(',')
     args = []
@@ -283,7 +283,9 @@ class Overlay(SampleAugmentation):
                     overlay_offset += n_current
                     self.current_sample = None
                 else:  # take required slice from head and keep tail for next layer or sample
-                    overlay_data[overlay_offset:overlay_offset + n_required] += self.current_sample[0:n_required]
+                    overlay_data[
+                        overlay_offset : overlay_offset + n_required
+                    ] += self.current_sample[:n_required]
                     overlay_offset += n_required
                     self.current_sample = self.current_sample[n_required:]
         snr_db = pick_value_from_range(self.snr, clock=clock)

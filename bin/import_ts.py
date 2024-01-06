@@ -23,9 +23,9 @@ FIELDNAMES = ["wav_filename", "wav_filesize", "transcript"]
 SAMPLE_RATE = 16000
 MAX_SECS = 15
 ARCHIVE_NAME = "2019-04-11_fr_FR"
-ARCHIVE_DIR_NAME = "ts_" + ARCHIVE_NAME
+ARCHIVE_DIR_NAME = f"ts_{ARCHIVE_NAME}"
 ARCHIVE_URL = (
-    "https://deepspeech-storage-mirror.s3.fr-par.scw.cloud/" + ARCHIVE_NAME + ".zip"
+    f"https://deepspeech-storage-mirror.s3.fr-par.scw.cloud/{ARCHIVE_NAME}.zip"
 )
 
 
@@ -34,7 +34,7 @@ def _download_and_preprocess_data(target_dir, english_compatible=False):
     target_dir = os.path.abspath(target_dir)
     # Conditionally download data
     archive_path = maybe_download(
-        "ts_" + ARCHIVE_NAME + ".zip", target_dir, ARCHIVE_URL
+        f"ts_{ARCHIVE_NAME}.zip", target_dir, ARCHIVE_URL
     )
     # Conditionally extract archive data
     _maybe_extract(target_dir, ARCHIVE_DIR_NAME, archive_path)
@@ -48,20 +48,20 @@ def _maybe_extract(target_dir, extracted_data, archive_path):
     # If target_dir/extracted_data does not exist, extract archive in target_dir
     extracted_path = os.path.join(target_dir, extracted_data)
     if not os.path.exists(extracted_path):
-        print('No directory "%s" - extracting archive...' % extracted_path)
+        print(f'No directory "{extracted_path}" - extracting archive...')
         if not os.path.isdir(extracted_path):
             os.mkdir(extracted_path)
         with zipfile.ZipFile(archive_path) as zip_f:
             zip_f.extractall(extracted_path)
     else:
-        print('Found directory "%s" - not extracting it from archive.' % archive_path)
+        print(f'Found directory "{archive_path}" - not extracting it from archive.')
 
 
 def one_sample(sample):
     """ Take a audio file, and optionally convert it to 16kHz WAV """
     orig_filename = sample["path"]
     # Storing wav files next to the wav ones - just with a different suffix
-    wav_filename = os.path.splitext(orig_filename)[0] + ".converted.wav"
+    wav_filename = f"{os.path.splitext(orig_filename)[0]}.converted.wav"
     _maybe_convert_wav(orig_filename, wav_filename)
     file_size = -1
     frames = 0
@@ -103,7 +103,9 @@ def one_sample(sample):
 def _maybe_convert_sets(target_dir, extracted_data, english_compatible=False):
     extracted_dir = os.path.join(target_dir, extracted_data)
     # override existing CSV with normalized one
-    target_csv_template = os.path.join(target_dir, "ts_" + ARCHIVE_NAME + "_{}.csv")
+    target_csv_template = os.path.join(
+        target_dir, f"ts_{ARCHIVE_NAME}" + "_{}.csv"
+    )
     if os.path.isfile(target_csv_template):
         return
     path_to_original_csv = os.path.join(extracted_dir, "data.csv")
@@ -121,7 +123,7 @@ def _maybe_convert_sets(target_dir, extracted_data, english_compatible=False):
     rows = []
     counter = get_counter()
 
-    print("Importing {} wav files...".format(num_samples))
+    print(f"Importing {num_samples} wav files...")
     pool = Pool()
     bar = progressbar.ProgressBar(max_value=num_samples, widgets=SIMPLE_BAR)
     for i, processed in enumerate(pool.imap_unordered(one_sample, data), start=1):

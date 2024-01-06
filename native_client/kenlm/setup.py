@@ -28,7 +28,7 @@ else:
     LIBS = []
 
 #We don't need -std=c++11 but python seems to be compiled with it now.  https://github.com/kpu/kenlm/issues/86
-ARGS = ['-O3', '-DNDEBUG', '-DKENLM_MAX_ORDER='+max_order, '-std=c++11']
+ARGS = ['-O3', '-DNDEBUG', f'-DKENLM_MAX_ORDER={max_order}', '-std=c++11']
 
 #Attempted fix to https://github.com/kpu/kenlm/issues/186 and https://github.com/kpu/kenlm/issues/197
 if platform.system() == 'Darwin':
